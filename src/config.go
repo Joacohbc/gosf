@@ -5,9 +5,11 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"path/filepath"
 )
 
-const tpl string = `
+const TextTemplate string = `
+
 <!DOCTYPE html>
 <html>
 <head>
@@ -32,7 +34,12 @@ a {
     margin: auto;
     display: block;
 }
+
+.error{
+    color: rgb(223, 80, 80);
+}
     </style>
+
 </head>
     <body>
         <div class="files">
@@ -40,17 +47,24 @@ a {
             <a id="{{.Index}}" href="{{.Link}}">{{.Name}}<a> <br>            
             {{end}}
         </div>
-    </body>
-</html>
-`
 
-const PathHtml string = "./template.html"
+        <div class="error">
+            <p>{{.Error}}</p>
+        </div>
+
+    </body>
+</html>`
+
+var (
+	PathTempalteHtml string = "./template.html"
+	NameTemplateHtml string = filepath.Base(PathTempalteHtml)
+)
 
 func CreateTemplate() error {
-
-	if _, err := os.Stat(PathHtml); err == nil {
-		log.Println("Usando template.html ya existente")
+	if _, err := os.Stat(PathTempalteHtml); err == nil {
+		log.Println("Usando " + NameTemplateHtml + " ya existente")
 		return nil
 	}
-	return ioutil.WriteFile("template.html", []byte(tpl), fs.ModeAppend)
+
+	return ioutil.WriteFile(NameTemplateHtml, []byte(TextTemplate), fs.ModeAppend)
 }

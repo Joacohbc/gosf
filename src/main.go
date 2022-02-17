@@ -12,13 +12,15 @@ import (
 )
 
 var (
-	port string
-	dir  string
+	port     string
+	dir      string
+	timeOpen time.Duration
 )
 
 func init() {
 	flag.StringVar(&dir, "d", "./", "Directorio que se va servir")
 	flag.StringVar(&port, "p", "8081", "Puerto donde se va a servir")
+	flag.DurationVar(&timeOpen, "t", 0, "Cuanto timepo estara abierto el servidor (en s/m/h")
 
 	//Convierto los argumentos
 	flag.Parse()
@@ -35,8 +37,25 @@ func init() {
 		log.Fatal("La ruta ingresada debe ser un directorio")
 	}
 
+	//Creo el Template
 	if err := CreateTemplate(); err != nil {
 		log.Fatal("Error al crear el template: " + err.Error())
+	}
+
+	//Si timeOpen es diferente de 0, es decir, que se ingreso algun valor
+	if timeOpen != 0 {
+
+		//Le notifico en cuanto se apagara el servidor
+		log.Println("El servidor se cerrara automaticamente en:", timeOpen.String())
+
+		/*
+			Y en una goroutine espero ese tiempo, con time.Sleep(),
+			y cierro el programa
+		*/
+		go func() {
+			time.Sleep(timeOpen)
+			os.Exit(0)
+		}()
 	}
 }
 
@@ -49,7 +68,7 @@ func main() {
 	router := gin.Default()
 
 	//Cargo los templates
-	router.LoadHTMLGlob(PathHtml)
+	router.LoadHTMLGlob(PathTempalteHtml)
 
 	//Uso "*file" para represntar toda la ruta, ejemplo en "/dir/file1" el parametro "file" sera "dir/file1"
 	router.GET("/*file", func(c *gin.Context) {
@@ -61,8 +80,52 @@ func main() {
 			Entoces sirvo el archivo que pidio y retorno
 		*/
 		if len(c.Param("file")) > 1 {
+
+			filePedido := filepath.Join(dir, c.Param("file"))
+
+			info, err := os.Stat(filePedido)
+
+			//Si el archivo no exite
+			if os.IsNotExist(err) {
+				c.HTML(http.StatusOK, NameTemplateHtml, gin.H{
+					"Files": []File{},
+					"Error": "El archivo que ha pedido no existe",
+				})
+				return
+			}
+
+			//Si ocurrio otro error
+			if err != nil {
+				c.HTML(http.StatusOK, NameTemplateHtml, gin.H{
+					"Files": []File{},
+					"Error": "Ocurrio un error al cargar el archivo" + err.Error(),
+				})
+				return
+			}
+
+			//Si se esta pidiendo un directorio
+			if info.IsDir() {
+				c.HTML(http.StatusOK, NameTemplateHtml, gin.H{
+					"Files": []File{},
+					"Error": "No puede pedir un directorio",
+				})
+				return
+			}
+
+			/*
+				Verifico si el archivo existe en la carpeta que se esta sirviendo.
+				Sino lo notifico
+			*/
+			if _, err := os.Stat(filepath.Join(dir, info.Name())); err != nil {
+				c.HTML(http.StatusOK, NameTemplateHtml, gin.H{
+					"Files": []File{},
+					"Error": "No puede pedir una archivo que no exite en la carpeta servida",
+				})
+				return
+			}
+
 			log.Println("Archivo pedido:", c.Param("file"))
-			c.File(filepath.Join(c.Param("file")))
+			c.File(filePedido)
 			return
 		}
 
@@ -75,8 +138,9 @@ func main() {
 		log.Println("Cantidad de archivos cargados:", len(files))
 
 		//Sirvo los archivos
-		c.HTML(http.StatusOK, "template.html", gin.H{
+		c.HTML(http.StatusOK, NameTemplateHtml, gin.H{
 			"Files": files,
+			"Error": "",
 		})
 	})
 

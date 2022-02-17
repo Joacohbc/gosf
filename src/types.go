@@ -26,6 +26,7 @@ func ReturnFiles(root string) ([]File, error) {
 
 	var files []File
 	var i int = 0
+
 	err := filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
 
 		if err != nil {
@@ -39,6 +40,11 @@ func ReturnFiles(root string) ([]File, error) {
 
 		//Si es un directorio lo omito
 		if info.IsDir() {
+			return nil
+		}
+
+		//Si es el archivo tamplate lo omito ya que no lo quiero mostrar
+		if info.Name() == NameTemplateHtml {
 			return nil
 		}
 
