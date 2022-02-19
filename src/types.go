@@ -43,11 +43,6 @@ func ReturnFiles(root string) ([]File, error) {
 			return nil
 		}
 
-		//Si es el archivo tamplate lo omito ya que no lo quiero mostrar
-		if info.Name() == NameTemplateHtml {
-			return nil
-		}
-
 		//Creo el arcihvo y le asigno algunos valores
 		f := File{
 			Path:    path,
