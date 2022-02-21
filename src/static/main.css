@@ -3,10 +3,14 @@ body{
     color: #fff
 }
 
-a {
+table{
     text-align: center;
     color: #fff;
-    font-size: 1.5em;
+    font-size: 1em;
+}
+
+td {
+    padding: 0.3em;
 }
 
 .files{

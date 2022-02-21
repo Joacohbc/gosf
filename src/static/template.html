@@ -12,11 +12,28 @@
     
 </head>
     <body>
-        <div class="files">
-            {{range .Files}}
-            <a id="{{.Index}}" href="./{{.Link}}">{{.Name}}<a> <br>            
-            {{end}}
-        </div>
+
+        <table class="files">
+            <thead>
+                <tr>
+                    <th scope="col">Nombre</th>
+                    <th scope="col">Ultima Mod</th>
+                    <th scope="col">Peso</th>
+                    <th scope="col">Acciones</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                {{range .Files}}
+                    <tr id="file-{{.Index}}" info="{{.Link}}">
+                        <th><a href="./{{.Link}}">{{.Name}}<a></th>
+                        <td>{{.SModTime}}</td>
+                        <td>{{.Size}}</td>
+                        <td><button id="del">Borrar</button></td>
+                    </tr>              
+                {{end}}
+            </tbody>
+        </table>
 
         <div class="error">
             <p>{{.Error}}</p>

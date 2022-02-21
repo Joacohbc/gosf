@@ -8,11 +8,13 @@ import (
 )
 
 type File struct {
-	Path    string    `json:"path"`
-	Name    string    `json:"name"`
-	Link    string    `json:"link"`
-	Index   int       `json:"index"`
-	ModTime time.Time `json:"modTime"`
+	Path     string    `json:"path"`
+	Name     string    `json:"name"`
+	Link     string    `json:"link"`
+	Index    int       `json:"index"`
+	ModTime  time.Time `json:"modTime"`
+	SModTime string    `json:"sModTime"`
+	Size     int64     `json:"size"`
 }
 
 //Guarda la Path como un URL en el atributo Link del objeto
@@ -45,10 +47,12 @@ func ReturnFiles(root string) ([]File, error) {
 
 		//Creo el arcihvo y le asigno algunos valores
 		f := File{
-			Path:    path,
-			Name:    info.Name(),
-			Index:   i,
-			ModTime: info.ModTime(),
+			Path:     path,
+			Name:     info.Name(),
+			Index:    i,
+			ModTime:  info.ModTime(),
+			SModTime: info.ModTime().Format("2006-01-02 15:04:05"),
+			Size:     info.Size(),
 		}
 
 		f.saveLink()
