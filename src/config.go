@@ -22,11 +22,11 @@ func CheckTemplate() error {
 	}
 
 	if !fileExist(RootDirTemplateFiles) {
-		return errors.New("no existe la carpeta de templates")
+		return errors.New("no existe la carpeta de templates: " + RootDirTemplateFiles)
 	}
 
 	if !fileExist(PathTempalteHtml) {
-		return errors.New("no existe el archivo template")
+		return errors.New("no existe el archivo template: " + PathTempalteHtml)
 	}
 
 	return nil

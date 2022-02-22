@@ -60,12 +60,17 @@ document.addEventListener('DOMContentLoaded', function() {
         e.stopPropagation();
         e.preventDefault();
 
-        if(!confirm("¿Quiere enviar el archivo/s seleccionado?")){
+        //Obtengo los archivos del selector de archivos
+        const files = document.getElementById("selectorDeArchivos").files;
+
+        if(files.length <= 0){
+            alert("Debe seleccinar algun archivo");
             return;
         }
 
-        //Obtengo los archivos del selector de archivos
-        const files = document.getElementById("selectorDeArchivos").files;
+        if(!confirm("¿Quiere enviar el archivo/s seleccionado?")){
+            return;
+        }
 
         const data = new FormData();
 

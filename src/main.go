@@ -23,22 +23,62 @@ func init() {
 	flag.StringVar(&DirToServe, "d", "", "Directorio que se va servir")
 	flag.StringVar(&PortSelected, "p", "8081", "Puerto donde se va a servir")
 	flag.StringVar(&TemplateDirSeleceted, "D", "", "Directorio donde se obtendra los templates")
-	flag.DurationVar(&DurationTimeOpened, "t", 0, "Cuanto timepo estara abierto el servidor (en s/m/h")
+	flag.DurationVar(&DurationTimeOpened, "t", 0, "Cuanto tiempo estara abierto el servidor (en s/m/h")
 
 	//Convierto los argumentos
 	flag.Parse()
 
-	//Si la path esta vacia
-	if DirToServe == "" {
+	//Checkeo las Flags
+	{
+		/*
+			Si el usuario no ingresa ningun directorios(osea que DirToServe esta vacia).
+			Busco la carpeta actual, os.Getwd(), y sirvo esa carpeta
+		*/
+		if DirToServe == "" {
 
-		//Identifico la carpeta actual
-		localPath, err := os.Getwd()
-		if err != nil {
-			log.Fatal("Error al buscar el directorio actual: " + err.Error())
+			//Identifico la carpeta actual
+			localPath, err := os.Getwd()
+			if err != nil {
+				log.Fatal("Error al buscar el directorio actual: " + err.Error())
+			}
+
+			//Y la guardo en "DirToServe"
+			DirToServe = localPath
 		}
 
-		//Y la guardo en "DirToServe"
-		DirToServe = localPath
+		//Si timeOpen es diferente de 0, es decir, que se ingreso algun valor
+		if DurationTimeOpened != 0 {
+
+			//Le notifico en cuanto se apagara el servidor
+			log.Println("El servidor se cerrara automaticamente en:", DurationTimeOpened.String())
+
+			/*
+				Y en una goroutine espero ese tiempo, con time.Sleep(),
+				y cierro el programa
+			*/
+			go func() {
+				time.Sleep(DurationTimeOpened)
+				os.Exit(0)
+			}()
+		}
+
+		/*
+			Si el usuario ingresa una carpeta de templates compruebo que exista.
+			Y cambio la carpeta predeterminada(RootDirTemplatesFiles) por esa carpeta
+			que ingreso el usuario
+		*/
+		if TemplateDirSeleceted != "" {
+			if _, err := os.Stat(TemplateDirSeleceted); err != nil {
+				log.Fatal("El direcotrio de template ingresado no existe")
+			}
+
+			//Cambio todas las variables referentes al templates
+			RootDirTemplateFiles = filepath.Clean(TemplateDirSeleceted)
+			PathTempalteHtml = filepath.Join(RootDirTemplateFiles, "template.html")
+			NameTemplateHtml = filepath.Base(PathTempalteHtml)
+
+			log.Printf("Se esta usando el directorio \"%s\" para templates\n", TemplateDirSeleceted)
+		}
 	}
 
 	//Busco la info del directorio
@@ -63,29 +103,6 @@ func init() {
 		log.Fatal("Error: ", err.Error())
 	}
 
-	//Si timeOpen es diferente de 0, es decir, que se ingreso algun valor
-	if DurationTimeOpened != 0 {
-
-		//Le notifico en cuanto se apagara el servidor
-		log.Println("El servidor se cerrara automaticamente en:", DurationTimeOpened.String())
-
-		/*
-			Y en una goroutine espero ese tiempo, con time.Sleep(),
-			y cierro el programa
-		*/
-		go func() {
-			time.Sleep(DurationTimeOpened)
-			os.Exit(0)
-		}()
-	}
-
-	if TemplateDirSeleceted != "" {
-		if _, err := os.Stat(TemplateDirSeleceted); err != nil {
-			log.Fatal("El direcotrio de template ingresado no existe")
-		}
-		RootDirTemplateFiles = filepath.Clean(TemplateDirSeleceted)
-		log.Printf("Se esta usando el directorio \"%s\" para templates\n", TemplateDirSeleceted)
-	}
 }
 
 func main() {
