@@ -7,15 +7,24 @@ table{
     text-align: center;
     color: #fff;
     font-size: 1em;
+    border-spacing: 0;
+    width: 100%;
 }
 
-td {
-    padding: 0.3em;
+td,th {
+    padding: 0.5em;
+    border: 1px solid #fff;
+    background-color: slategray;
+    border-collapse: collapse;
 }
 
 .files{
     margin: auto;
     display: block;
+}
+
+.subirArchivos{
+    margin: auto;
 }
 
 .error{

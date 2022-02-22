@@ -12,7 +12,6 @@
     
 </head>
     <body>
-
         <table class="files">
             <thead>
                 <tr>
@@ -32,6 +31,15 @@
                         <td><button id="del">Borrar</button></td>
                     </tr>              
                 {{end}}
+
+                <tr>
+                    <form class="subirArchivos" method="POST" enctype="multipart/form-data">
+                        <td colspan="4">
+                            <input id="selectorDeArchivos" type="file" name="filesToUpload" required multiple>
+                            <input id="btnSubir" type="submit">
+                        </td>
+                    </form>
+                </tr> 
             </tbody>
         </table>
 

@@ -68,7 +68,7 @@ func ServirArchivos(c *gin.Context) {
 			Sino lo notifico
 		*/
 
-		if _, err := filepath.Rel(dir, filePedido); err != nil {
+		if _, err := filepath.Rel(DirToServe, filePedido); err != nil {
 			c.HTML(http.StatusUnauthorized, NameTemplateHtml, gin.H{
 				"Files": []File{},
 				"Error": "No puede pedir una archivo que no exite en la carpeta servida",
@@ -81,7 +81,7 @@ func ServirArchivos(c *gin.Context) {
 	}
 
 	//Leo los archivos del directorio que se me pidio(dir)
-	files, err := ReturnFiles(dir)
+	files, err := ReturnFiles(DirToServe)
 	if err != nil {
 		log.Fatal("Error al leer los archivos", err)
 	}
@@ -141,7 +141,7 @@ func BorrarArchivo(c *gin.Context) {
 		Sino lo notifico
 	*/
 
-	if _, err := filepath.Rel(dir, filePedido); err != nil {
+	if _, err := filepath.Rel(DirToServe, filePedido); err != nil {
 		c.HTML(http.StatusUnauthorized, NameTemplateHtml, gin.H{
 			"error": "No puede elimnar un archivo que no exite en la carpeta servida",
 		})
@@ -159,5 +159,43 @@ func BorrarArchivo(c *gin.Context) {
 	log.Println("Se borro con exito el archivo: " + filePedido)
 	c.JSON(http.StatusAccepted, gin.H{
 		"status": "Se borro el archivo exitosamente",
+	})
+}
+
+// RedirectToFiles - POST - /
+func RedirectToFiles(c *gin.Context) {
+	c.Redirect(http.StatusPermanentRedirect, "getfiles")
+}
+
+// SubirArchivo - POST - /uploadfiles
+func SubirArchivo(c *gin.Context) {
+
+	//Leo el Form
+	form, err := c.MultipartForm()
+
+	//Si ocurrio un error al leer
+	if err != nil {
+		log.Println("Error al ller multipart-form:" + err.Error())
+		c.JSON(http.StatusOK, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+
+	//Recorro todos los archivos del formulario(form.File) con el nombre "fileToUpload"
+	for _, file := range form.File["fileToUpload"] {
+		err := c.SaveUploadedFile(file, filepath.Join(DirToServe, file.Filename))
+		if err != nil {
+			log.Println("Error al guardar archivo: " + err.Error())
+			c.JSON(http.StatusOK, gin.H{
+				"error": err.Error(),
+			})
+			return
+		}
+		log.Println("Arcihvo guardado en:", filepath.Join(DirToServe, file.Filename))
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"status": "ok",
 	})
 }

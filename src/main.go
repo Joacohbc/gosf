@@ -12,24 +12,24 @@ import (
 )
 
 var (
-	port        string
-	dir         string
-	templateDir string
-	timeOpen    time.Duration
+	PortSelected         string
+	DirToServe           string
+	TemplateDirSeleceted string
+	DurationTimeOpened   time.Duration
 )
 
 func init() {
 
-	flag.StringVar(&dir, "d", "", "Directorio que se va servir")
-	flag.StringVar(&port, "p", "8081", "Puerto donde se va a servir")
-	flag.StringVar(&templateDir, "D", "", "Directorio donde se obtendra los templates")
-	flag.DurationVar(&timeOpen, "t", 0, "Cuanto timepo estara abierto el servidor (en s/m/h")
+	flag.StringVar(&DirToServe, "d", "", "Directorio que se va servir")
+	flag.StringVar(&PortSelected, "p", "8081", "Puerto donde se va a servir")
+	flag.StringVar(&TemplateDirSeleceted, "D", "", "Directorio donde se obtendra los templates")
+	flag.DurationVar(&DurationTimeOpened, "t", 0, "Cuanto timepo estara abierto el servidor (en s/m/h")
 
 	//Convierto los argumentos
 	flag.Parse()
 
 	//Si la path esta vacia
-	if dir == "" {
+	if DirToServe == "" {
 
 		//Identifico la carpeta actual
 		localPath, err := os.Getwd()
@@ -37,12 +37,12 @@ func init() {
 			log.Fatal("Error al buscar el directorio actual: " + err.Error())
 		}
 
-		//Y la guardo en "dir"
-		dir = localPath
+		//Y la guardo en "DirToServe"
+		DirToServe = localPath
 	}
 
 	//Busco la info del directorio
-	i, err := os.Stat(dir)
+	i, err := os.Stat(DirToServe)
 
 	//Si la ruta no exite
 	if os.IsNotExist(err) {
@@ -64,27 +64,27 @@ func init() {
 	}
 
 	//Si timeOpen es diferente de 0, es decir, que se ingreso algun valor
-	if timeOpen != 0 {
+	if DurationTimeOpened != 0 {
 
 		//Le notifico en cuanto se apagara el servidor
-		log.Println("El servidor se cerrara automaticamente en:", timeOpen.String())
+		log.Println("El servidor se cerrara automaticamente en:", DurationTimeOpened.String())
 
 		/*
 			Y en una goroutine espero ese tiempo, con time.Sleep(),
 			y cierro el programa
 		*/
 		go func() {
-			time.Sleep(timeOpen)
+			time.Sleep(DurationTimeOpened)
 			os.Exit(0)
 		}()
 	}
 
-	if templateDir != "" {
-		if _, err := os.Stat(templateDir); err != nil {
+	if TemplateDirSeleceted != "" {
+		if _, err := os.Stat(TemplateDirSeleceted); err != nil {
 			log.Fatal("El direcotrio de template ingresado no existe")
 		}
-		RootDirTemplateFiles = filepath.Clean(templateDir)
-		log.Printf("Se esta usando el directorio \"%s\" para templates\n", templateDir)
+		RootDirTemplateFiles = filepath.Clean(TemplateDirSeleceted)
+		log.Printf("Se esta usando el directorio \"%s\" para templates\n", TemplateDirSeleceted)
 	}
 }
 
@@ -102,19 +102,23 @@ func main() {
 	//Sirvo los archivos JS, CSS y HTML
 	router.StaticFS("/static", http.Dir(RootDirTemplateFiles))
 
-	//Si el usuario quiero ir a "/" lo rediriga a donde estan los archivos
-	router.GET("/", func(c *gin.Context) {
-		c.Redirect(http.StatusPermanentRedirect, "getfiles")
-	})
+	//Agrego todos los handlers
+	{
+		//Si el usuario quiero ir a "/" lo rediriga a donde estan los archivos
+		router.GET("/", RedirectToFiles)
 
-	router.POST("/removefiles/*file", BorrarArchivo)
+		router.POST("/removefiles/*file", BorrarArchivo)
 
-	//Uso "*file" para represntar toda la ruta, ejemplo en "/dir/file1" el parametro "file" sera "dir/file1"
-	router.GET("/getfiles/*file", ServirArchivos)
+		//Uso "*file" para represntar toda la ruta, ejemplo en "/dir/file1" el
+		//parametro "file" sera "dir/file1"
+		router.GET("/getfiles/*file", ServirArchivos)
+
+		router.POST("/uploadfiles", SubirArchivo)
+	}
 
 	//Personalizo el servidor
 	s := &http.Server{
-		Addr:           ":" + port,
+		Addr:           ":" + PortSelected,
 		Handler:        router,
 		ReadTimeout:    30 * time.Second,
 		WriteTimeout:   30 * time.Second,
@@ -124,8 +128,8 @@ func main() {
 	log.Println("Iniciando servidor...")
 
 	//Abro el servidor
-	log.Println("Servidor abierto en:", port)
-	log.Println("Ruta servida:", dir)
+	log.Println("Servidor abierto en:", PortSelected)
+	log.Println("Ruta servida:", DirToServe)
 
 	err := s.ListenAndServe()
 	if err != nil {
