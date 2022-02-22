@@ -55,6 +55,20 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
+    //Selecciono todos los botones de borrar
+    document.querySelectorAll("#download").forEach(b => {
+        //Y agrego a todos los botones esos eventos
+        b.addEventListener("click", (e) =>{
+            e.stopPropagation();
+            e.preventDefault();
+
+            let archivo = b.parentElement.parentElement.getAttribute("info");
+            let url = `http://${window.location.host}/downloadfiles/${archivo}`;
+            let win = window.open(url, "_blank");
+            win.focus();
+        });
+    });
+
     //Le agrego el evento "click" al boton de subir archivos 
     document.getElementById("btnSubir").addEventListener("click", function(e){
         e.stopPropagation();
@@ -63,6 +77,8 @@ document.addEventListener('DOMContentLoaded', function() {
         //Obtengo los archivos del selector de archivos
         const files = document.getElementById("selectorDeArchivos").files;
 
+        //Comprobar si el selector de archivos tiene algun archivo
+        //sino no aceptar
         if(files.length <= 0){
             alert("Debe seleccinar algun archivo");
             return;

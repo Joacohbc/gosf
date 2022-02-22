@@ -124,12 +124,16 @@ func main() {
 		//Si el usuario quiero ir a "/" lo rediriga a donde estan los archivos
 		router.GET("/", RedirectToFiles)
 
+		//Aqui donde se resibe la peticion de borrar archivos
 		router.POST("/removefiles/*file", BorrarArchivo)
 
 		//Uso "*file" para represntar toda la ruta, ejemplo en "/dir/file1" el
 		//parametro "file" sera "dir/file1"
 		router.GET("/getfiles/*file", ServirArchivos)
 
+		router.GET("/downloadfiles/*file", DescargarArchivos)
+
+		//Aqui es donde se resiben las peticiones con archivos para subir al servidor
 		router.POST("/uploadfiles", SubirArchivo)
 	}
 

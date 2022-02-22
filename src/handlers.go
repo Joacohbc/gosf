@@ -95,6 +95,64 @@ func ServirArchivos(c *gin.Context) {
 	})
 }
 
+// DescargarArchivos - GET - /downloadfiles/*files
+func DescargarArchivos(c *gin.Context) {
+
+	//La ruta del archivo que se pidio
+	filePedido := filepath.Clean(c.Param("file"))
+
+	/*
+		Si el archivo que se pide no tiene carpeta
+		el servidor lo tomara como que se esta buscado en "./"
+	*/
+	if s := filepath.Dir(filePedido); s == "/" {
+		filePedido = "./" + filepath.Clean(c.Param("file"))
+	}
+
+	//Veo la info dela arch
+	info, err := os.Stat(filePedido)
+
+	//Si el archivo no exite
+	if os.IsNotExist(err) {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "El archivo que ha pedido no existe",
+		})
+		return
+	}
+
+	//Si ocurrio otro error
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "Ocurrio un error al buscar el archivo" + err.Error(),
+		})
+		return
+	}
+
+	//Si se esta pidiendo un directorio
+	if info.IsDir() {
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"error": "No puede descargar un directorio",
+		})
+		return
+	}
+
+	/*
+		Verifico si el archivo existe en la carpeta que se esta sirviendo.
+		Sino lo notifico
+	*/
+
+	if _, err := filepath.Rel(DirToServe, filePedido); err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"error": "No puede descargar un archivo que no exite en la carpeta servida",
+		})
+		return
+	}
+
+	c.FileAttachment(filePedido, filepath.Base(filePedido))
+
+	log.Println("Se descargo el archivo: " + filePedido)
+}
+
 // BorrarArchivo - POST - /removefiles/*files
 func BorrarArchivo(c *gin.Context) {
 
@@ -142,7 +200,7 @@ func BorrarArchivo(c *gin.Context) {
 	*/
 
 	if _, err := filepath.Rel(DirToServe, filePedido); err != nil {
-		c.HTML(http.StatusUnauthorized, NameTemplateHtml, gin.H{
+		c.JSON(http.StatusUnauthorized, gin.H{
 			"error": "No puede elimnar un archivo que no exite en la carpeta servida",
 		})
 		return
@@ -157,6 +215,7 @@ func BorrarArchivo(c *gin.Context) {
 	}
 
 	log.Println("Se borro con exito el archivo: " + filePedido)
+
 	c.JSON(http.StatusAccepted, gin.H{
 		"status": "Se borro el archivo exitosamente",
 	})
