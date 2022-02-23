@@ -17,6 +17,26 @@ type File struct {
 	Size     int64     `json:"size"`
 }
 
+func ReturnFile(path string) (File, error) {
+	info, err := os.Stat(path)
+	if err != nil {
+		return File{}, err
+	}
+
+	file := File{
+		Path:     path,
+		Name:     info.Name(),
+		Index:    0,
+		ModTime:  info.ModTime(),
+		SModTime: info.ModTime().Format("2006-01-02 15:04:05"),
+		Size:     info.Size(),
+	}
+
+	file.saveLink()
+
+	return file, nil
+}
+
 //Guarda la Path como un URL en el atributo Link del objeto
 func (f *File) saveLink() {
 	location := url.URL{Path: filepath.Clean(f.Path)}

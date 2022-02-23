@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"log"
 	"net/http"
 	"os"
@@ -8,6 +9,73 @@ import (
 
 	"github.com/gin-gonic/gin"
 )
+
+/*
+	Valida que la ruta que se envio que se envio sea valido para
+	que el usuario pueda acceder a el:
+
+	- "Limpia" la ruta
+	- Valida si existe
+	- Valida si se puede acceder a el
+	- Valida que no sea un directorio
+	- Valida que el directorio este en la carpeta servido
+*/
+func archivoValido(llamado, path string) (string, int, error) {
+
+	log := func(args ...interface{}) {
+		//Creo un nuevo array donde agrego [llamado]
+		a := append(make([]interface{}, 0), "["+llamado+"]")
+
+		//Y a ese array le agrego
+		a = append(a, args...)
+		log.Println(a...)
+	}
+
+	//La ruta del archivo que se pidio
+	filePedido := filepath.Clean(path)
+
+	log("Se intento acceder a:", filePedido)
+	/*
+		Si el archivo que se pide no tiene carpeta
+		el servidor lo tomara como que se esta buscado
+		en la carpeta servida
+	*/
+	if s := filepath.Dir(filePedido); s == "/" {
+		filePedido = filepath.Join(DirToServe, filePedido)
+		log("Se le agrego el directorio al fichero:", filePedido)
+	}
+
+	//Veo la info dela arch
+	info, err := os.Stat(filePedido)
+
+	//Si el archivo no exite
+	if os.IsNotExist(err) {
+		log("El fichero pedido no existe:", filePedido)
+		return filePedido, http.StatusInternalServerError, errors.New("el fichero al que intenta acceder no existe: " + err.Error())
+	}
+
+	//Si ocurrio otro error
+	if err != nil {
+		return filePedido, http.StatusInternalServerError, errors.New("ocurrio un error al buscar el fichero: " + err.Error())
+	}
+
+	//Si se esta pidiendo un directorio
+	if info.IsDir() {
+		log("Se intento acceder a al directorio:", filePedido)
+		return filePedido, http.StatusUnauthorized, errors.New("no puede acceder a un directorio")
+	}
+
+	/*
+		Verifico si el archivo existe en la carpeta que se esta sirviendo.
+		Sino lo notifico
+	*/
+	if _, err := filepath.Rel(DirToServe, filePedido); err != nil {
+		log("Se intento acceder a un archivo fuera de la carpeta:", filePedido)
+		return filePedido, http.StatusUnauthorized, errors.New("no puede acceder a un archivo que no exite en la carpeta servida")
+	}
+
+	return filePedido, http.StatusOK, nil
+}
 
 // ServirArchivos - GET - /getfiles/*files
 func ServirArchivos(c *gin.Context) {
@@ -20,63 +88,16 @@ func ServirArchivos(c *gin.Context) {
 	*/
 	if len(c.Param("file")) > 1 {
 
-		//La ruta del archivo que se pidio
-		filePedido := filepath.Clean(c.Param("file"))
-
-		/*
-			Si el archivo que se pide no tiene carpeta
-			el servidor lo tomara como que se esta buscado en "./"
-		*/
-		if s := filepath.Dir(filePedido); s == "/" {
-			filePedido = "./" + filepath.Clean(c.Param("file"))
-		}
-
-		log.Println("Archivo pedido:", filePedido)
-
-		//Veo la info dela arch
-		info, err := os.Stat(filePedido)
-
-		//Si el archivo no exite
-		if os.IsNotExist(err) {
-			c.HTML(http.StatusInternalServerError, NameTemplateHtml, gin.H{
-				"Files": []File{},
-				"Error": "El archivo que ha pedido no existe",
-			})
-			return
-		}
-
-		//Si ocurrio otro error
+		archivo, resp, err := archivoValido(c.FullPath(), c.Param("file"))
+		//Valido la ruta
 		if err != nil {
-			c.HTML(http.StatusInternalServerError, NameTemplateHtml, gin.H{
+			c.HTML(resp, NameTemplateHtml, gin.H{
 				"Files": []File{},
-				"Error": "Ocurrio un error al cargar el archivo" + err.Error(),
+				"Error": err.Error(),
 			})
-			return
 		}
 
-		//Si se esta pidiendo un directorio
-		if info.IsDir() {
-			c.HTML(http.StatusUnauthorized, NameTemplateHtml, gin.H{
-				"Files": []File{},
-				"Error": "No puede pedir un directorio",
-			})
-			return
-		}
-
-		/*
-			Verifico si el archivo existe en la carpeta que se esta sirviendo.
-			Sino lo notifico
-		*/
-
-		if _, err := filepath.Rel(DirToServe, filePedido); err != nil {
-			c.HTML(http.StatusUnauthorized, NameTemplateHtml, gin.H{
-				"Files": []File{},
-				"Error": "No puede pedir una archivo que no exite en la carpeta servida",
-			})
-			return
-		}
-
-		c.File(filePedido)
+		c.File(archivo)
 		return
 	}
 
@@ -98,115 +119,48 @@ func ServirArchivos(c *gin.Context) {
 // DescargarArchivos - GET - /downloadfiles/*files
 func DescargarArchivos(c *gin.Context) {
 
-	//La ruta del archivo que se pidio
-	filePedido := filepath.Clean(c.Param("file"))
+	archivo, resp, err := archivoValido(c.FullPath(), c.Param("file"))
 
-	/*
-		Si el archivo que se pide no tiene carpeta
-		el servidor lo tomara como que se esta buscado en "./"
-	*/
-	if s := filepath.Dir(filePedido); s == "/" {
-		filePedido = "./" + filepath.Clean(c.Param("file"))
-	}
-
-	//Veo la info dela arch
-	info, err := os.Stat(filePedido)
-
-	//Si el archivo no exite
-	if os.IsNotExist(err) {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "El archivo que ha pedido no existe",
-		})
-		return
-	}
-
-	//Si ocurrio otro error
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Ocurrio un error al buscar el archivo" + err.Error(),
-		})
-		return
-	}
-
-	//Si se esta pidiendo un directorio
-	if info.IsDir() {
-		c.JSON(http.StatusUnauthorized, gin.H{
-			"error": "No puede descargar un directorio",
+		c.JSON(resp, gin.H{
+			"error": err.Error(),
 		})
 		return
 	}
 
 	/*
-		Verifico si el archivo existe en la carpeta que se esta sirviendo.
-		Sino lo notifico
+		b, err := ioutil.ReadFile(filePedido)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": "Ocurrio un error al intentar leer el archivo",
+			})
+			return
+		}
+
+		c.JSON(http.StatusOK, gin.H{
+			"stauts": "ok",
+			"data":   b,
+			"name":   filepath.Base(filePedido),
+		})
 	*/
 
-	if _, err := filepath.Rel(DirToServe, filePedido); err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{
-			"error": "No puede descargar un archivo que no exite en la carpeta servida",
-		})
-		return
-	}
+	c.FileAttachment(archivo, filepath.Base(archivo))
 
-	c.FileAttachment(filePedido, filepath.Base(filePedido))
-
-	log.Println("Se descargo el archivo: " + filePedido)
+	log.Println("Se descargo el archivo: " + archivo)
 }
 
 // BorrarArchivo - POST - /removefiles/*files
 func BorrarArchivo(c *gin.Context) {
 
-	//La ruta del archivo que se pidio
-	filePedido := filepath.Clean(c.Param("file"))
-
-	/*
-		Si el archivo que se pide no tiene carpeta
-		el servidor lo tomara como que se esta buscado en "./"
-	*/
-	if s := filepath.Dir(filePedido); s == "/" {
-		filePedido = "./" + filepath.Clean(c.Param("file"))
-	}
-
-	//Veo la info dela arch
-	info, err := os.Stat(filePedido)
-
-	//Si el archivo no exite
-	if os.IsNotExist(err) {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "El archivo que ha pedido no existe",
-		})
-		return
-	}
-
-	//Si ocurrio otro error
+	archivo, resp, err := archivoValido(c.FullPath(), c.Param("file"))
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Ocurrio un error al buscar el archivo" + err.Error(),
+		c.JSON(resp, gin.H{
+			"error": err.Error(),
 		})
 		return
 	}
 
-	//Si se esta pidiendo un directorio
-	if info.IsDir() {
-		c.JSON(http.StatusUnauthorized, gin.H{
-			"error": "No puede eliminar un directorio",
-		})
-		return
-	}
-
-	/*
-		Verifico si el archivo existe en la carpeta que se esta sirviendo.
-		Sino lo notifico
-	*/
-
-	if _, err := filepath.Rel(DirToServe, filePedido); err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{
-			"error": "No puede elimnar un archivo que no exite en la carpeta servida",
-		})
-		return
-	}
-
-	err = os.Remove(c.Param("file"))
+	err = os.Remove(archivo)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": err.Error(),
@@ -214,7 +168,7 @@ func BorrarArchivo(c *gin.Context) {
 		return
 	}
 
-	log.Println("Se borro con exito el archivo: " + filePedido)
+	log.Println("Se borro con exito el archivo: " + archivo)
 
 	c.JSON(http.StatusAccepted, gin.H{
 		"status": "Se borro el archivo exitosamente",
@@ -234,7 +188,7 @@ func SubirArchivo(c *gin.Context) {
 
 	//Si ocurrio un error al leer
 	if err != nil {
-		log.Println("Error al ller multipart-form:" + err.Error())
+		log.Println("Error al leer multipart-form:" + err.Error())
 		c.JSON(http.StatusOK, gin.H{
 			"error": err.Error(),
 		})

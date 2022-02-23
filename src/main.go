@@ -102,7 +102,6 @@ func init() {
 	if err := CheckTemplate(); err != nil {
 		log.Fatal("Error: ", err.Error())
 	}
-
 }
 
 func main() {
@@ -125,7 +124,7 @@ func main() {
 		router.GET("/", RedirectToFiles)
 
 		//Aqui donde se resibe la peticion de borrar archivos
-		router.POST("/removefiles/*file", BorrarArchivo)
+		router.DELETE("/removefiles/*file", BorrarArchivo)
 
 		//Uso "*file" para represntar toda la ruta, ejemplo en "/dir/file1" el
 		//parametro "file" sera "dir/file1"
