@@ -1,6 +1,7 @@
 package main
 
 import (
+	"ServerFile/src/myfuncs"
 	"errors"
 	"log"
 	"net/http"
@@ -77,6 +78,11 @@ func archivoValido(llamado, path string) (string, int, error) {
 	return filePedido, http.StatusOK, nil
 }
 
+// RedirectToFiles - GET - /
+func RedirectToFiles(c *gin.Context) {
+	c.Redirect(http.StatusPermanentRedirect, "getfiles")
+}
+
 // ServirArchivos - GET - /getfiles/*files
 func ServirArchivos(c *gin.Context) {
 
@@ -93,7 +99,7 @@ func ServirArchivos(c *gin.Context) {
 		if err != nil {
 			c.HTML(resp, NameTemplateHtml, gin.H{
 				"Files": []File{},
-				"Error": err.Error(),
+				"Error": myfuncs.PrimeraMayus(err.Error()),
 			})
 		}
 
@@ -123,7 +129,7 @@ func DescargarArchivos(c *gin.Context) {
 
 	if err != nil {
 		c.JSON(resp, gin.H{
-			"error": err.Error(),
+			"error": myfuncs.PrimeraMayus(err.Error()),
 		})
 		return
 	}
@@ -149,13 +155,13 @@ func DescargarArchivos(c *gin.Context) {
 	log.Println("Se descargo el archivo: " + archivo)
 }
 
-// BorrarArchivo - POST - /removefiles/*files
+// BorrarArchivo - DELETE - /removefiles/*files
 func BorrarArchivo(c *gin.Context) {
 
 	archivo, resp, err := archivoValido(c.FullPath(), c.Param("file"))
 	if err != nil {
 		c.JSON(resp, gin.H{
-			"error": err.Error(),
+			"error": myfuncs.PrimeraMayus(err.Error()),
 		})
 		return
 	}
@@ -175,11 +181,6 @@ func BorrarArchivo(c *gin.Context) {
 	})
 }
 
-// RedirectToFiles - POST - /
-func RedirectToFiles(c *gin.Context) {
-	c.Redirect(http.StatusPermanentRedirect, "getfiles")
-}
-
 // SubirArchivo - POST - /uploadfiles
 func SubirArchivo(c *gin.Context) {
 
@@ -190,7 +191,7 @@ func SubirArchivo(c *gin.Context) {
 	if err != nil {
 		log.Println("Error al leer multipart-form:" + err.Error())
 		c.JSON(http.StatusOK, gin.H{
-			"error": err.Error(),
+			"error": myfuncs.PrimeraMayus(err.Error()),
 		})
 		return
 	}

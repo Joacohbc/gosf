@@ -1,6 +1,6 @@
 testing/*
 *.sh
-.vscode/*
+.vcode/*
 
 #Ignoro las cosas de debug
 node_modules/*

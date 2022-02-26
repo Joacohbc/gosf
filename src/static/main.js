@@ -1,10 +1,12 @@
 document.addEventListener('DOMContentLoaded', function() {
     //Selecciono todos los botones de borrar
     document.querySelectorAll("#del").forEach(b => {
+        
         //Y agrego a todos los botones esos eventos
         b.addEventListener("click", (e) =>{
             e.stopPropagation();
             e.preventDefault();
+
             if(!confirm("¿Quiere borrar el archivo seleccionado?")){
                 return;
             }
@@ -22,7 +24,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const Http = new XMLHttpRequest();
             const url=`http://${window.location.host}/removefiles/${archivo}`;
             
-            Http.open("POST", url);
+            Http.open("DELETE", url);
             Http.onreadystatechange = () => {
 
                 //Si no esta completada la transaccion(Estado Nro 4)
@@ -57,6 +59,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     //Selecciono todos los botones de borrar
     document.querySelectorAll("#download").forEach(b => {
+
         //Y agrego a todos los botones esos eventos
         b.addEventListener("click", (e) =>{
             e.stopPropagation();
@@ -71,6 +74,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     //Le agrego el evento "click" al boton de subir archivos 
     document.getElementById("btnSubir").addEventListener("click", function(e){
+
         e.stopPropagation();
         e.preventDefault();
 
@@ -115,5 +119,4 @@ document.addEventListener('DOMContentLoaded', function() {
             
         }); 
     });
-
 });
