@@ -16,14 +16,16 @@ var (
 	DirToServe           string
 	TemplateDirSeleceted string
 	DurationTimeOpened   time.Duration
+	RecursiveMode        bool
 )
 
 func init() {
 
 	flag.StringVar(&DirToServe, "d", "", "Directorio que se va servir")
 	flag.StringVar(&PortSelected, "p", "8081", "Puerto donde se va a servir")
-	flag.StringVar(&TemplateDirSeleceted, "D", "", "Directorio donde se obtendra los templates")
-	flag.DurationVar(&DurationTimeOpened, "t", 0, "Cuanto tiempo estara abierto el servidor (en s/m/h")
+	flag.StringVar(&TemplateDirSeleceted, "D", "", "Directorio donde se obtendra los archivos HTML/CCS/JS")
+	flag.DurationVar(&DurationTimeOpened, "t", 0, "Cuanto tiempo estara abierto el servidor (en s/m/h)")
+	flag.BoolVar(&RecursiveMode, "r", false, "Seriva todos los archivos de todos los directorio dentro de la ruta indicada")
 
 	//Convierto los argumentos
 	flag.Parse()
@@ -74,8 +76,6 @@ func init() {
 
 			//Cambio todas las variables referentes al templates
 			RootDirTemplateFiles = filepath.Clean(TemplateDirSeleceted)
-			PathTempalteHtml = filepath.Join(RootDirTemplateFiles, "template.html")
-			NameTemplateHtml = filepath.Base(PathTempalteHtml)
 
 			log.Printf("Se esta usando el directorio \"%s\" para templates\n", TemplateDirSeleceted)
 		}
@@ -111,9 +111,6 @@ func main() {
 
 	//Creo el Router de Rutas
 	router := gin.Default()
-
-	//Cargo los templates
-	router.LoadHTMLGlob(PathTempalteHtml)
 
 	//Sirvo los archivos JS, CSS y HTML
 	router.StaticFS("/static", http.Dir(RootDirTemplateFiles))

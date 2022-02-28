@@ -8,7 +8,6 @@
     <meta name='viewport' content='width=device-width, initial-scale=1'>
     <link rel='icon' href='/static/favicon.ico'>
     <link rel='stylesheet' href='/static/main.css'>
-    <script src='https://unpkg.com/axios/dist/axios.min.js'></script>
     <script src='/static/main.js' type='text/javascript'></script>
 
 </head>
@@ -24,18 +23,9 @@
             </thead>
 
             <tbody>
-                {{range .Files}}
-                    <tr id="file-{{.Index}}" info="{{.Link}}">
-                        <th><a href="./{{.Link}}">{{.Name}}<a></th>
-                        <td>{{.SModTime}}</td>
-                        <td>{{.Size}}</td>
-                        <td>
-                            <button id="del">Borrar</button>
-                            <button id="download">Descargar</button>
-                        </td>
-                    </tr>              
-                {{end}}
+            </tbody>
 
+            <tfoot>
                 <tr>
                     <form class="subirArchivos" method="POST" enctype="multipart/form-data">
                         <td colspan="4">
@@ -44,12 +34,7 @@
                         </td>
                     </form>
                 </tr> 
-            </tbody>
+            </tfoot>
         </table>
-
-        <div class="error">
-            <p>{{.Error}}</p>
-        </div>
-
     </body>
 </html>

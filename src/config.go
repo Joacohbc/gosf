@@ -8,8 +8,6 @@ import (
 
 var (
 	RootDirTemplateFiles string = filepath.Clean("./static")
-	PathTempalteHtml     string = filepath.Join(RootDirTemplateFiles, "template.html")
-	NameTemplateHtml     string = filepath.Base(PathTempalteHtml)
 )
 
 func CheckTemplate() error {
@@ -23,10 +21,6 @@ func CheckTemplate() error {
 
 	if !fileExist(RootDirTemplateFiles) {
 		return errors.New("no existe la carpeta de templates: " + RootDirTemplateFiles)
-	}
-
-	if !fileExist(PathTempalteHtml) {
-		return errors.New("no existe el archivo template: " + PathTempalteHtml)
 	}
 
 	return nil

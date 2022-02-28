@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 )
@@ -33,18 +34,25 @@ func archivoValido(llamado, path string) (string, int, error) {
 	}
 
 	//La ruta del archivo que se pidio
-	filePedido := filepath.Clean(path)
+	//Agrego el [1:] para que no tome el primer caracter que es "/"
+	/*
+		Simpre tiene un "/" porque se usan URls como "/getfile/*file"
+		que sin importar si "*file" tiene o no tiene nada simpre se le
+		agrega un "/"
+	*/
+	filePedido := filepath.Clean(path[1:])
 
 	log("Se intento acceder a:", filePedido)
+
 	/*
 		Si el archivo que se pide no tiene carpeta
 		el servidor lo tomara como que se esta buscado
 		en la carpeta servida
 	*/
-	if s := filepath.Dir(filePedido); s == "/" {
-		filePedido = filepath.Join(DirToServe, filePedido)
-		log("Se le agrego el directorio al fichero:", filePedido)
-	}
+	//if s := filepath.Dir(filePedido); s == "/" {
+	//	filePedido = filepath.Join(DirToServe, filePedido)
+	//	log("Se le agrego el directorio al fichero:", filePedido)
+	//}
 
 	//Veo la info dela arch
 	info, err := os.Stat(filePedido)
@@ -68,11 +76,21 @@ func archivoValido(llamado, path string) (string, int, error) {
 
 	/*
 		Verifico si el archivo existe en la carpeta que se esta sirviendo.
-		Sino lo notifico
+		Sino lo notifico.
+
+		Compruebo checkeando que si en la ruta que se esta pidiendo
+		contiene el directorio servido, si no lo contiene sigmifica
+		que no esta dentro de el. (Al estar trabajando con rutas absolutas
+		y no relativas esto funciona)
 	*/
-	if _, err := filepath.Rel(DirToServe, filePedido); err != nil {
+	if !strings.Contains(filePedido, DirToServe) {
 		log("Se intento acceder a un archivo fuera de la carpeta:", filePedido)
 		return filePedido, http.StatusUnauthorized, errors.New("no puede acceder a un archivo que no exite en la carpeta servida")
+	}
+
+	if strings.Contains(filePedido, RootDirTemplateFiles) {
+		log("Se intento acceder a un archivo de la carpeta de templates:", filePedido)
+		return filePedido, http.StatusUnauthorized, errors.New("no puede acceder a un archivo de la carpeta de templates")
 	}
 
 	return filePedido, http.StatusOK, nil
@@ -80,7 +98,7 @@ func archivoValido(llamado, path string) (string, int, error) {
 
 // RedirectToFiles - GET - /
 func RedirectToFiles(c *gin.Context) {
-	c.Redirect(http.StatusPermanentRedirect, "getfiles")
+	c.Redirect(http.StatusPermanentRedirect, "static")
 }
 
 // ServirArchivos - GET - /getfiles/*files
@@ -97,11 +115,24 @@ func ServirArchivos(c *gin.Context) {
 		archivo, resp, err := archivoValido(c.FullPath(), c.Param("file"))
 		//Valido la ruta
 		if err != nil {
-			c.HTML(resp, NameTemplateHtml, gin.H{
-				"Files": []File{},
-				"Error": myfuncs.PrimeraMayus(err.Error()),
+			c.JSON(resp, gin.H{
+				"error": myfuncs.PrimeraMayus(err.Error()),
 			})
+			return
 		}
+
+		//blob, err := ioutil.ReadFile(archivo)
+		//if err != nil {
+		//	c.JSON(http.StatusInternalServerError, gin.H{
+		//		"error": myfuncs.PrimeraMayus(err.Error()),
+		//	})
+		//}
+
+		//c.JSON(http.StatusOK, gin.H{
+		//	"file": blob,
+		//	"type": http.DetectContentType(blob),
+		//	"name": filepath.Base(archivo),
+		//})
 
 		c.File(archivo)
 		return
@@ -116,10 +147,7 @@ func ServirArchivos(c *gin.Context) {
 	log.Println("Cantidad de archivos cargados:", len(files))
 
 	//Sirvo los archivos
-	c.HTML(http.StatusOK, NameTemplateHtml, gin.H{
-		"Files": files,
-		"Error": "",
-	})
+	c.JSON(http.StatusOK, files)
 }
 
 // DescargarArchivos - GET - /downloadfiles/*files
