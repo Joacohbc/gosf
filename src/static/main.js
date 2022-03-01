@@ -7,8 +7,12 @@ document.addEventListener('DOMContentLoaded', function() {
     ///Convierto la respuesta JSON
     .then(response => response.json())
     .then(data => {
-        
-        if(data.length == 0){
+
+        /*
+            Si 'data' es null sigmifica que el json esta vacio, 
+            si esta vacio sigmifica que no se subio ningun archivo
+        */
+        if(data == null){
             //Creo la fila (table row)
             let tr = document.createElement("tr");
 
@@ -92,7 +96,7 @@ document.addEventListener('DOMContentLoaded', function() {
         alert('Ocurrio un error:' + error);
         console.error(error);
     }).finally(() => {
-
+        
         //Le agrego el evento "click" al boton de subir archivos 
         document.getElementById("btnSubir").addEventListener("click", function(e){
 
@@ -140,7 +144,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 
             }); 
         });
-
     }); 
 });
 

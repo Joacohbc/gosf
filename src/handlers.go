@@ -20,7 +20,8 @@ import (
 	- Valida si existe
 	- Valida si se puede acceder a el
 	- Valida que no sea un directorio
-	- Valida que el directorio este en la carpeta servido
+	- Valida que el directorio pedido este en el directorio servido
+	- Valida el modo recursivo
 */
 func archivoValido(llamado, path string) (string, int, error) {
 
@@ -45,9 +46,9 @@ func archivoValido(llamado, path string) (string, int, error) {
 	log("Se intento acceder a:", filePedido)
 
 	/*
-		Si el archivo que se pide no tiene carpeta
+		Si el archivo que se pide no tiene directorio
 		el servidor lo tomara como que se esta buscado
-		en la carpeta servida
+		en el directorio servido
 	*/
 	//if s := filepath.Dir(filePedido); s == "/" {
 	//	filePedido = filepath.Join(DirToServe, filePedido)
@@ -75,7 +76,7 @@ func archivoValido(llamado, path string) (string, int, error) {
 	}
 
 	/*
-		Verifico si el archivo existe en la carpeta que se esta sirviendo.
+		Verifico si el archivo existe en el directorio que se esta sirviendo.
 		Sino lo notifico.
 
 		Compruebo checkeando que si en la ruta que se esta pidiendo
@@ -84,13 +85,24 @@ func archivoValido(llamado, path string) (string, int, error) {
 		y no relativas esto funciona)
 	*/
 	if !strings.Contains(filePedido, DirToServe) {
-		log("Se intento acceder a un archivo fuera de la carpeta:", filePedido)
-		return filePedido, http.StatusUnauthorized, errors.New("no puede acceder a un archivo que no exite en la carpeta servida")
+		log("Se intento acceder a un archivo fuera del directorio:", filePedido)
+		return filePedido, http.StatusUnauthorized, errors.New("no puede acceder a un archivo que no exite en el directorio servida")
 	}
 
+	//Verifico que el archivo pedido no pertenesca al directorio que Templates
 	if strings.Contains(filePedido, RootDirTemplateFiles) {
-		log("Se intento acceder a un archivo de la carpeta de templates:", filePedido)
-		return filePedido, http.StatusUnauthorized, errors.New("no puede acceder a un archivo de la carpeta de templates")
+		log("Se intento acceder a un archivo del directorio de templates:", filePedido)
+		return filePedido, http.StatusUnauthorized, errors.New("no puede acceder a un archivo del directorio de templates")
+	}
+
+	//Si el modo recursivo no esta activado
+	if !RecursiveMode {
+		// Los archivos que se pidan deben tener como padre
+		//estrictamente al directorio servido
+		if filepath.Dir(filePedido) != DirToServe {
+			log("Se intento acceder a un archivo de un directorio no permitido (Modo Recursivo off):", filePedido)
+			return filePedido, http.StatusUnauthorized, errors.New("no puede acceder a un archivo dentro de este directorio sin el modo recursivo activado")
+		}
 	}
 
 	return filePedido, http.StatusOK, nil

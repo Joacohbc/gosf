@@ -20,7 +20,7 @@ func CheckTemplate() error {
 	}
 
 	if !fileExist(RootDirTemplateFiles) {
-		return errors.New("no existe la carpeta de templates: " + RootDirTemplateFiles)
+		return errors.New("no existe el directorio de templates: " + RootDirTemplateFiles)
 	}
 
 	return nil
