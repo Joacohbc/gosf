@@ -97,7 +97,7 @@ func archivoValido(llamado, path string) (string, int, error) {
 
 	//Si el modo recursivo no esta activado
 	if !RecursiveMode {
-		// Los archivos que se pidan deben tener como padre
+		//Los archivos que se pidan deben tener como padre
 		//estrictamente al directorio servido
 		if filepath.Dir(filePedido) != DirToServe {
 			log("Se intento acceder a un archivo de un directorio no permitido (Modo Recursivo off):", filePedido)
