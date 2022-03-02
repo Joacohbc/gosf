@@ -4,8 +4,7 @@ export function actionDescargar(e) {
 
     let archivo = e.target.parentElement.parentElement.getAttribute("info");
     let url = `http://${window.location.host}/downloadfiles/${archivo}`;
-    let win = window.open(url, "_blank");
-    win.focus();
+    let win = window.open(url, "_self");
 }
 
 export function actionBorrar(e) {
@@ -191,6 +190,7 @@ export function actionSubir(e) {
             console.error(error);
         });
 }
+
 /* 
     Sacado de:
     https://stackoverflow.com/questions/15900485/correct-way-to-convert-size-in-bytes-to-kb-mb-gb-in-javascript
