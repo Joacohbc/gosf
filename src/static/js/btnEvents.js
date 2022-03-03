@@ -2,9 +2,9 @@ export function actionDescargar(e) {
     e.stopPropagation();
     e.preventDefault();
 
-    let archivo = e.target.parentElement.parentElement.getAttribute("info");
-    let url = `http://${window.location.host}/downloadfiles/${archivo}`;
-    let win = window.open(url, "_self");
+    const archivo = e.target.parentElement.parentElement.getAttribute("info");
+    const url = `http://${window.location.host}/downloadfiles/${archivo}`;
+    const win = window.open(url, "_self");
 }
 
 export function actionBorrar(e) {
@@ -22,7 +22,7 @@ export function actionBorrar(e) {
     De ese <tr> obtengo el atributo "info" que es donde esta el nombre
     del archivo
     */
-    let archivo = e.target.parentElement.parentElement.getAttribute("info");
+    const archivo = e.target.parentElement.parentElement.getAttribute("info");
 
     //Creo la peticion
     const Http = new XMLHttpRequest();
@@ -53,7 +53,7 @@ export function actionBorrar(e) {
             //Si es correcto  recargo para que ya no se muestre el archivo
             window.location.reload();
         } else {
-            let respuesta = JSON.parse(Http.responseText);
+            const respuesta = JSON.parse(Http.responseText);
             alert(respuesta.error);
         }
     };
@@ -130,9 +130,9 @@ export function actionCargar(e) {
         responseData.blob().then((blob) => {
 			
             //Creo un url a ese blbo
-            let link = window.URL.createObjectURL(blob);
+            const link = window.URL.createObjectURL(blob);
             window.open(link, "_self");
-
+            
         }).catch(error => {
             alert('Ocurrio un error al procesar el archivo:' + error);
             console.error(error);
