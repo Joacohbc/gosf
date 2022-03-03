@@ -12,16 +12,18 @@ var (
 
 func CheckTemplate() error {
 
-	fileExist := func(path string) bool {
-		if _, err := os.Stat(path); err != nil {
-			return false
-		}
-		return true
-	}
+	info, err := os.Stat(RootDirTemplateFiles)
 
-	if !fileExist(RootDirTemplateFiles) {
+	if os.IsNotExist(err) {
 		return errors.New("no existe el directorio de templates: " + RootDirTemplateFiles)
 	}
 
+	if err != nil {
+		return errors.New("ocurrio un error al validar el archivo de templates: " + err.Error())
+	}
+
+	if !info.IsDir() {
+		return errors.New("el fichero de templates debe ser un directorio")
+	}
 	return nil
 }

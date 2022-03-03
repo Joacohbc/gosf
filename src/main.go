@@ -17,10 +17,12 @@ var (
 	TemplateDirSeleceted string
 	DurationTimeOpened   time.Duration
 	RecursiveMode        bool
+	HelpMessage          bool
 )
 
 func init() {
 
+	flag.BoolVar(&HelpMessage, "help", false, "Muestra el mensaje de ayuda")
 	flag.StringVar(&DirToServe, "d", "", "Directorio que se va servir")
 	flag.StringVar(&PortSelected, "p", "8081", "Puerto donde se va a servir")
 	flag.StringVar(&TemplateDirSeleceted, "D", "", "Directorio donde se obtendra los archivos HTML/CCS/JS")
@@ -32,27 +34,30 @@ func init() {
 
 	//Checkeo las Flags
 	{
+		//Si se ingreso la flag de ayuda, mostrar el mensaje y cerrar
+		if HelpMessage {
+			flag.Usage()
+			os.Exit(0)
+		}
+
 		/*
-			Si el usuario no ingresa ningun directorios(osea que DirToServe esta vacia).
-			Busco el directorio actual, os.Getwd(), y sirvo ese directorio
+			Si el usuario ingresa algun directorio(osea que DirToServe no esta vacia) compruebo
+			que el directorio ingresa es una ruta absoluta, sino cierror el programa
 		*/
-		if DirToServe == "" {
-
-			//Identifico el directorio actual
-			localPath, err := os.Getwd()
-			if err != nil {
-				log.Fatal("Error al buscar el directorio actual: " + err.Error())
+		if DirToServe != "" {
+			//Si si se ingreso un directorio
+			if !filepath.IsAbs(DirToServe) {
+				log.Fatal("La ruta ingresada debe ser absoluta")
 			}
-
-			//Y la guardo en "DirToServe"
-			DirToServe = localPath
 		}
 
 		//Si timeOpen es diferente de 0, es decir, que se ingreso algun valor
 		if DurationTimeOpened != 0 {
 
-			//Le notifico en cuanto se apagara el servidor
-			log.Println("El servidor se cerrara automaticamente en:", DurationTimeOpened.String())
+			//Comrpuebo que el valor no sea un valor negativo
+			if DurationTimeOpened <= 0 {
+				log.Fatalln("Se debe ingresar un tiempo de cierre valido (un valor positivo)")
+			}
 
 			/*
 				Y en una goroutine espero ese tiempo, con time.Sleep(),
@@ -76,11 +81,13 @@ func init() {
 
 			//Cambio todas las variables referentes al templates
 			RootDirTemplateFiles = filepath.Clean(TemplateDirSeleceted)
-
-			log.Printf("Se esta usando el directorio \"%s\" para templates\n", TemplateDirSeleceted)
 		}
+	}
 
-		log.Printf("Modo recursivo: %v", RecursiveMode)
+	//Identifico el directorio actual
+	DirToServe, err := os.Getwd()
+	if err != nil {
+		log.Fatal("Error al buscar el directorio actual: " + err.Error())
 	}
 
 	//Busco la info del directorio
@@ -100,10 +107,19 @@ func init() {
 		log.Fatal("La ruta ingresada debe ser un directorio")
 	}
 
-	//Creo el Template
+	//Evaluo que la carpeta de Templates sea valida
 	if err := CheckTemplate(); err != nil {
 		log.Fatal("Error: ", err.Error())
 	}
+
+	//Una vez checkeadas todas las flags
+	//Muestro sus estados
+	log.Println("Flags:")
+	log.Println("- Servidor abierto en:", PortSelected)
+	log.Println("- Ruta servida:", DirToServe)
+	log.Println("- Modo recursivo:", RecursiveMode)
+	log.Println("- Tiempo de cierre automatico:", DurationTimeOpened.String())
+	log.Printf("- Se esta usando el directorio \"%s\" para templates\n", TemplateDirSeleceted)
 }
 
 func main() {
@@ -145,10 +161,6 @@ func main() {
 	}
 
 	log.Println("Iniciando servidor...")
-
-	//Abro el servidor
-	log.Println("Servidor abierto en:", PortSelected)
-	log.Println("Ruta servida:", DirToServe)
 
 	err := s.ListenAndServe()
 	if err != nil {
