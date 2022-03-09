@@ -3,6 +3,7 @@ package main
 import (
 	"ServerFile/src/myfuncs"
 	"errors"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -16,22 +17,23 @@ import (
 	Valida que la ruta que se envio que se envio sea valido para
 	que el usuario pueda acceder a el:
 
-	- "Limpia" la ruta
-	- Valida si existe
-	- Valida si se puede acceder a el
-	- Valida que no sea un directorio
+	- Comprueba si la ruta es abosluta (myfuncs.EsAbsolutaYExiste)
+	- Valida si existe la ruta
+	- Valida si se puede acceder a el archivo (Si esta dentro de la carpeta servida)
+	- Valida que no sea un directorio (Debido a que solo se sirven archivos)
 	- Valida que el directorio pedido este en el directorio servido
-	- Valida el modo recursivo
+	- Valida el modo recursivo (en caso de estar activo)
 */
 func archivoValido(llamado, path string) (string, int, error) {
 
-	log := func(args ...interface{}) {
-		//Creo un nuevo array donde agrego [llamado]
-		a := append(make([]interface{}, 0), "["+llamado+"]")
+	var mensajes []string
+	defer func() {
+		log.Println("["+llamado+"]", " - ", path, "\n", strings.Join(mensajes, "\n"))
+	}()
 
-		//Y a ese array le agrego
-		a = append(a, args...)
-		log.Println(a...)
+	//Agrega mensajes a la varaible que se imprimira
+	log := func(args ...interface{}) {
+		mensajes = append(mensajes, fmt.Sprint(args...))
 	}
 
 	//La ruta del archivo que se pidio
@@ -41,19 +43,14 @@ func archivoValido(llamado, path string) (string, int, error) {
 		que sin importar si "*file" tiene o no tiene nada simpre se le
 		agrega un "/"
 	*/
-	filePedido := filepath.Clean(path[1:])
+	var filePedido string = path[1:]
 
 	log("Se intento acceder a:", filePedido)
 
-	/*
-		Si el archivo que se pide no tiene directorio
-		el servidor lo tomara como que se esta buscado
-		en el directorio servido
-	*/
-	//if s := filepath.Dir(filePedido); s == "/" {
-	//	filePedido = filepath.Join(DirToServe, filePedido)
-	//	log("Se le agrego el directorio al fichero:", filePedido)
-	//}
+	if err := myfuncs.EsAbsolutaYExite(&filePedido); err != nil {
+		log(myfuncs.PrimeraMayus(err.Error()))
+		return filePedido, http.StatusInternalServerError, err
+	}
 
 	//Veo la info dela arch
 	info, err := os.Stat(filePedido)
@@ -90,7 +87,7 @@ func archivoValido(llamado, path string) (string, int, error) {
 	}
 
 	//Verifico que el archivo pedido no pertenesca al directorio que Templates
-	if strings.Contains(filePedido, RootDirTemplateFiles) {
+	if strings.Contains(filePedido, TemplateDirSeleceted) {
 		log("Se intento acceder a un archivo del directorio de templates:", filePedido)
 		return filePedido, http.StatusUnauthorized, errors.New("no puede acceder a un archivo del directorio de templates")
 	}
@@ -133,19 +130,6 @@ func ServirArchivos(c *gin.Context) {
 			return
 		}
 
-		//blob, err := ioutil.ReadFile(archivo)
-		//if err != nil {
-		//	c.JSON(http.StatusInternalServerError, gin.H{
-		//		"error": myfuncs.PrimeraMayus(err.Error()),
-		//	})
-		//}
-
-		//c.JSON(http.StatusOK, gin.H{
-		//	"file": blob,
-		//	"type": http.DetectContentType(blob),
-		//	"name": filepath.Base(archivo),
-		//})
-
 		c.File(archivo)
 		return
 	}
@@ -153,7 +137,7 @@ func ServirArchivos(c *gin.Context) {
 	//Leo los archivos del directorio que se me pidio(dir)
 	files, err := ReturnFiles(DirToServe)
 	if err != nil {
-		log.Fatal("Error al leer los archivos", err)
+		log.Fatal("Error al leer los archivos:", err)
 	}
 
 	log.Println("Cantidad de archivos cargados:", len(files))
@@ -173,22 +157,6 @@ func DescargarArchivos(c *gin.Context) {
 		})
 		return
 	}
-
-	/*
-		b, err := ioutil.ReadFile(filePedido)
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{
-				"error": "Ocurrio un error al intentar leer el archivo",
-			})
-			return
-		}
-
-		c.JSON(http.StatusOK, gin.H{
-			"stauts": "ok",
-			"data":   b,
-			"name":   filepath.Base(filePedido),
-		})
-	*/
 
 	c.FileAttachment(archivo, filepath.Base(archivo))
 

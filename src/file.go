@@ -82,6 +82,7 @@ func ReturnFiles(root string) (files []File, err error) {
 			return nil
 		})
 		return files, err
+
 	} else {
 
 		infos, err := ioutil.ReadDir(DirToServe)

@@ -1,6 +1,7 @@
 testing/*
 *.sh
 .vcode/*
+src/not-implemented/*
 
 #Ignoro las cosas de debug
 node_modules/*
