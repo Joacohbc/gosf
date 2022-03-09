@@ -13,17 +13,14 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-/*
-	Valida que la ruta que se envio que se envio sea valido para
-	que el usuario pueda acceder a el:
-
-	- Comprueba si la ruta es abosluta (myfuncs.EsAbsolutaYExiste)
-	- Valida si existe la ruta
-	- Valida si se puede acceder a el archivo (Si esta dentro de la carpeta servida)
-	- Valida que no sea un directorio (Debido a que solo se sirven archivos)
-	- Valida que el directorio pedido este en el directorio servido
-	- Valida el modo recursivo (en caso de estar activo)
-*/
+//Valida que la ruta que se envio que se envio sea valido para
+//que el usuario pueda acceder a el:
+//- Comprueba si la ruta es abosluta (myfuncs.EsAbsolutaYExiste)
+//- Valida si existe la ruta
+//- Valida si se puede acceder a el archivo (Si esta dentro de la carpeta servida)
+//- Valida que no sea un directorio (Debido a que solo se sirven archivos)
+//- Valida que el directorio pedido este en el directorio servido
+//- Valida el modo recursivo (en caso de estar activo)
 func archivoValido(llamado, path string) (string, int, error) {
 
 	var mensajes []string

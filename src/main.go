@@ -2,10 +2,12 @@ package main
 
 import (
 	"ServerFile/src/myfuncs"
+	"context"
 	"flag"
 	"log"
 	"net/http"
 	"os"
+	"os/signal"
 	"path/filepath"
 	"time"
 
@@ -118,6 +120,7 @@ func init() {
 }
 
 func main() {
+
 	//Activar el release mode
 	gin.SetMode(gin.ReleaseMode)
 
@@ -157,8 +160,36 @@ func main() {
 
 	log.Println("Iniciando servidor...")
 
-	err := s.ListenAndServe()
-	if err != nil {
-		log.Fatalln("Error al abri el servidor: ", err)
+	//Inicio el servidor en segundo plano
+	go func() {
+		if err := s.ListenAndServe(); err != nil {
+			if err != http.ErrServerClosed {
+				log.Fatalln("Error al abri el servidor: ", err)
+			}
+		}
+	}()
+
+	//Creo un canal de signal
+	c := make(chan os.Signal, 1)
+
+	//Luego le "pido" que me notifique cuando se intente
+	//cerrar un programa
+	signal.Notify(c, os.Interrupt)
+
+	//Si espero  que llegue la senial de cierre
+	<-c
+	log.Println("Apagando servidor...")
+
+	//Pido el contexto con un DeadLine de 5s
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+
+	//Cuando termine "cierre" el contexto
+	defer cancel()
+
+	//Y apago el servidor
+	if err := s.Shutdown(ctx); err != nil {
+		log.Fatal("Error al apagar el servidor:", err)
 	}
+	log.Println("Servidor apagado con exito")
+
 }
