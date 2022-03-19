@@ -7,3 +7,4 @@ src/not-implemented/*
 node_modules/*
 *.json
 .jshintrc
+Ideas.md
