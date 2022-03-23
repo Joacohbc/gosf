@@ -1,9 +1,9 @@
 package main
 
 import (
-	"ServerFile/src/myfuncs"
 	"context"
 	"flag"
+	"gosf/src/myfuncs"
 	"log"
 	"net/http"
 	"os"

@@ -1,9 +1,9 @@
 package main
 
 import (
-	"ServerFile/src/myfuncs"
 	"errors"
 	"fmt"
+	"gosf/src/myfuncs"
 	"log"
 	"net/http"
 	"os"

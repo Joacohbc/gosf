@@ -1,4 +1,4 @@
-module ServerFile
+module gosf
 
 go 1.17
 
