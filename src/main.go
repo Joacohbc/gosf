@@ -140,7 +140,10 @@ func main() {
 	router.GET("/", RedirectToFiles)
 
 	//Creo los
-	api := router.Group("/api")
+
+	api := router.Group("/api", gin.BasicAuth(gin.Accounts{
+		"joaco": "joaco",
+	}))
 	{
 		//Uso "*file" para represntar toda la ruta, ejemplo en "/dir/file1" el
 		//parametro "file" sera "dir/file1"

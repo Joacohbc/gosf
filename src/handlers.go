@@ -4,7 +4,6 @@ import (
 	"ServerFile/src/myfuncs"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
@@ -105,8 +104,7 @@ func ServirArchivos(c *gin.Context) {
 		path, code, err := archivoValido(c.FullPath(), c.Param("path"))
 		if err != nil {
 			c.JSON(code, gin.H{
-				"status": code,
-				"error":  err.Error(),
+				"error": myfuncs.PrimeraMayus(err.Error()),
 			})
 			return
 		}
@@ -114,8 +112,7 @@ func ServirArchivos(c *gin.Context) {
 		file, err := ReturnFile(path)
 		if err != nil {
 			c.JSON(code, gin.H{
-				"status": http.StatusInternalServerError,
-				"error":  err.Error(),
+				"error": myfuncs.PrimeraMayus(err.Error()),
 			})
 			return
 		}
@@ -151,29 +148,6 @@ func ServirArchivos(c *gin.Context) {
 	c.JSON(http.StatusOK, files)
 }
 
-func CargarArchivosBeta(c *gin.Context) {
-
-	path, code, err := archivoValido(c.FullPath(), c.Param("path"))
-	if err != nil {
-		c.JSON(code, gin.H{
-			"status": code,
-			"error":  err.Error(),
-		})
-		return
-	}
-
-	b, err := ioutil.ReadFile(path)
-	if err != nil {
-		c.JSON(code, gin.H{
-			"status": http.StatusInternalServerError,
-			"error":  err.Error(),
-		})
-		return
-	}
-
-	c.Data(http.StatusOK, http.DetectContentType(b), b)
-}
-
 // DescargarArchivos - GET - /downloadfiles/*files
 func DescargarArchivos(c *gin.Context) {
 
@@ -182,6 +156,21 @@ func DescargarArchivos(c *gin.Context) {
 	if err != nil {
 		c.JSON(resp, gin.H{
 			"error": myfuncs.PrimeraMayus(err.Error()),
+		})
+		return
+	}
+
+	file, err := ReturnFile(archivo)
+	if err != nil {
+		c.JSON(resp, gin.H{
+			"error": myfuncs.PrimeraMayus(err.Error()),
+		})
+		return
+	}
+
+	if file.IsDir {
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"error": "You can't download a directory",
 		})
 		return
 	}

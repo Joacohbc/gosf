@@ -5,9 +5,43 @@ export function actionDescargar(e) {
     e.stopPropagation();
     e.preventDefault();
 
+    e.stopPropagation();
+    e.preventDefault();
+
+    //Leo la info del archivo
     const archivo = e.target.parentElement.parentElement.getAttribute("info");
-    const url = `http://${window.location.host}/api/api/ownloadfiles/${archivo}`;
-    const win = window.open(url, "_self");
+    const url = `http://${window.location.host}/api/downloadfiles/${archivo}`;
+
+    //Hago la peticion
+    fetch(url, {
+        method: 'GET',
+    }).then(responseData => {
+        
+        //Si el status no es Ok, sigmifica que algo fallo
+        //y se notificara con un JSON
+        if (!responseData.ok) {
+
+            //Sabiendo que sera un JSON, proceso el json
+            responseData.json().then(json => {
+                //Y notifico el error
+                alert('Ocurrio un error al acceder al archivo: ' + json.error);
+            }).catch((err) => {
+                alert('Ocurrio un error al leer la respuesta del servidor');
+                console.log(err);
+            });
+            return;
+        }
+
+        const archivo = e.target.parentElement.parentElement.getAttribute("info");
+        const url = `http://${window.location.host}/api/api/ownloadfiles/${archivo}`;
+        const win = window.open(url, "_self");
+
+    }).catch(error => {
+        //Si ocurrio un error
+        alert('Ocurrio un error:' + error);
+        console.error(error);
+    });
+
 }
 
 //Accion de borrar un archivo
@@ -169,98 +203,109 @@ export function cargarHTML(archivo) {
     //Hago la consulta por los archivo
     const respuesta = fetch(url, {
         method: 'GET',
-    }).then(response => response.json()).then(data => {
+    }).then(response => {
 
-        /*
-            Si 'data' es null sigmifica que el json esta vacio, 
-            si esta vacio sigmifica que no se subio ningun archivo
-        */
-        if(data == null){
-            //Creo la fila (table row)
-            const tr = document.createElement("tr");
-
-            //Creo la columna de la no archivos
-            const noFiles = document.createElement("td");
-            noFiles.setAttribute("colspan","4");
-            noFiles.innerHTML = "No hay archivos en el directorio servido";
-            //Y agrego la columna de tiempo a la fila
-            tr.appendChild(noFiles);
-
-            document.querySelector(".files").appendChild(tr);
-            return;
-        }
-
-        /*
-            Creo la parte del documento donde agregare
-            las filas
-        */
-        const part = document.createDocumentFragment();
-        for (let i = 0; i < data.length; i++) {
-
-            //Creo la fila (table row)
-            const tr = document.createElement("tr");
-            tr.setAttribute("info", data[i].link);
-
-            //Creo la columna donde va el "Nombre"
-            const name = document.createElement("th");
-
-            //Agrego el <a> en el nombre
-            const link = document.createElement("a");
-            link.href = "/getfiles/"+data[i].link;
-            link.innerHTML = data[i].name;
-            if (data[i].isDir == true) {
-                link.addEventListener("click", actionCargarDir);
-            }else{
-                link.addEventListener("click", actionObtener);
+        //Es resonse.json() se hace aca para poder haccer a response.ok
+        //desde la funcion para saber si el StatusCode es Ok
+        response.json().then(data => {
+            if (!response.ok) {
+                alert(data.error);
             }
 
-            name.appendChild(link);
-            //Y agrego la columna de nombres a la fila
-            tr.appendChild(name);
-
-            //Creo la columna de la "Modificación del tiempo"
-            const modTime = document.createElement("td");
-            modTime.innerHTML = data[i].sModTime;
-            //Y agrego la columna de tiempo a la fila
-            tr.appendChild(modTime);
-
-            //Creo la columna del peso del archivo
-            const size = document.createElement("td");
-            size.innerHTML = formatBytes(data[i].size);
-            //Y agrego la columna de peso a la fila
-            tr.appendChild(size);
+            /*
+                Si 'data' es null sigmifica que el json esta vacio, 
+                si esta vacio sigmifica que no se subio ningun archivo
+            */
+            if(data == null){
+                //Creo la fila (table row)
+                const tr = document.createElement("tr");
+    
+                //Creo la columna de la no archivos
+                const noFiles = document.createElement("td");
+                noFiles.setAttribute("colspan","4");
+                noFiles.innerHTML = "No hay archivos en el directorio servido";
+                //Y agrego la columna de tiempo a la fila
+                tr.appendChild(noFiles);
+    
+                document.querySelector(".files").appendChild(tr);
+                return;
+            }
+    
+            /*
+                Creo la parte del documento donde agregare
+                las filas
+            */
+            const part = document.createDocumentFragment();
+            for (let i = 0; i < data.length; i++) {
+    
+                //Creo la fila (table row)
+                const tr = document.createElement("tr");
+                tr.setAttribute("info", data[i].link);
+    
+                //Creo la columna donde va el "Nombre"
+                const name = document.createElement("th");
+    
+                //Agrego el <a> en el nombre
+                const link = document.createElement("a");
+                link.href = "/getfiles/"+data[i].link;
+                link.innerHTML = data[i].name;
+                if (data[i].isDir == true) {
+                    link.addEventListener("click", actionCargarDir);
+                }else{
+                    link.addEventListener("click", actionObtener);
+                }
+    
+                name.appendChild(link);
+                //Y agrego la columna de nombres a la fila
+                tr.appendChild(name);
+    
+                //Creo la columna de la "Modificación del tiempo"
+                const modTime = document.createElement("td");
+                modTime.innerHTML = data[i].sModTime;
+                //Y agrego la columna de tiempo a la fila
+                tr.appendChild(modTime);
+    
+                //Creo la columna del peso del archivo
+                const size = document.createElement("td");
+                size.innerHTML = formatBytes(data[i].size);
+                //Y agrego la columna de peso a la fila
+                tr.appendChild(size);
+                
+                //Creo la columna de botones
+                const botones = document.createElement("td");
+    
+                //Creo el "boton de Borrar"
+                const btnBorrar = document.createElement("button");
+                btnBorrar.setAttribute("id", "del");
+                btnBorrar.innerHTML = "Borrar";
+                btnBorrar.addEventListener("click", actionBorrar);
+                //Agrego el boton a la columna
+                botones.appendChild(btnBorrar);
+    
+                //Agregar el boton de Descargar solamente si es una archivo
+                if (data[i].isDir == false) {
+                    //Creo el "boton de Descargar"
+                    const btnDescargar = document.createElement("button");
+                    btnDescargar.setAttribute("id", "download");
+                    btnDescargar.innerHTML = "Descargar";
+                    btnDescargar.addEventListener("click", actionDescargar);
+                    //Agrego los botones
+                    botones.appendChild(btnDescargar);
+                }
+    
+                //Y agrego la columna de botones a la fila
+                tr.appendChild(botones);
+    
+                //Y agrego al final la fila a la parte del documetno
+                part.appendChild(tr);
+            }
+    
+            //Y agego el documento a la tabla(con la clase fila)
+            document.querySelector("tbody").appendChild(part);
             
-            //Creo la columna de botones
-            const botones = document.createElement("td");
-
-            //Creo el "boton de Borrar"
-            const btnBorrar = document.createElement("button");
-            btnBorrar.setAttribute("id", "del");
-            btnBorrar.innerHTML = "Borrar";
-            btnBorrar.addEventListener("click", actionBorrar);
-            //Agrego el boton a la columna
-            botones.appendChild(btnBorrar);
-
-            //Creo el "boton de Descargar"
-            const btnDescargar = document.createElement("button");
-            btnDescargar.setAttribute("id", "download");
-            btnDescargar.innerHTML = "Descargar";
-            btnDescargar.addEventListener("click", actionDescargar);
-            //Agrego los botones
-            botones.appendChild(btnDescargar);
-
-            //Y agrego la columna de botones a la fila
-            tr.appendChild(botones);
-
-            //Y agrego al final la fila a la parte del documetno
-            part.appendChild(tr);
-        }
-
-        //Y agego el documento a la tabla(con la clase fila)
-        document.querySelector("tbody").appendChild(part);
-        
-        //Le agrego el evento "click" al boton de subir archivos 
-        document.getElementById("btnSubir").addEventListener("click", actionSubir);
+            //Le agrego el evento "click" al boton de subir archivos 
+            document.getElementById("btnSubir").addEventListener("click", actionSubir);
+        });
 
     }).catch(error => {
         //Si ocurrio un error
@@ -284,53 +329,3 @@ export function formatBytes(bytes, decimals = 2) {
 
     return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
 }
-
-/*
-export function actionCargar(e) {
-    e.stopPropagation();
-    e.preventDefault();
-
-    //Leo la info del archivo
-    const archivo = e.target.parentElement.parentElement.getAttribute("info");
-    const url = `http://${window.location.host}/api/getfiles/${archivo}`;
-
-    //Hago la peticion
-    fetch(url, {
-        method: 'GET',
-    }).then((response) => response).then((responseData) => {
-
-        //Si el status no es Ok, sigmifica que algo fallo
-        //y se notificara con un JSON
-        if (!responseData.ok) {
-
-            //Sabiendo que sera un JSON, proceso el json
-            responseData.json().then(json => {
-                //Y notifico el error
-                alert('Ocurrio un error al acceder al archivo: ' + json.error);
-            }).catch((err) => {
-                alert('Ocurrio un error al leer la respuesta del servidor');
-                console.log(err);
-            });
-            return;
-        }
-        
-        //Si el status fue Ok, se que llegara un blob
-        //entoces proceso un blob
-        responseData.blob().then((blob) => {
-			
-            //Creo un url a ese blbo
-            const link = window.URL.createObjectURL(blob);
-            window.open(link, "_self");
-            
-        }).catch(error => {
-            alert('Ocurrio un error al procesar el archivo:' + error);
-            console.error(error);
-        });
-
-    }).catch(error => {
-        //Si ocurrio un error
-        alert('Ocurrio un error:' + error);
-        console.error(error);
-    });
-}
-*/
