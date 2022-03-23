@@ -4,6 +4,7 @@ import (
 	"ServerFile/src/myfuncs"
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
@@ -20,12 +21,11 @@ import (
 //- Valida si se puede acceder a el archivo (Si esta dentro de la carpeta servida)
 //- Valida que no sea un directorio (Debido a que solo se sirven archivos)
 //- Valida que el directorio pedido este en el directorio servido
-//- Valida el modo recursivo (en caso de estar activo)
 func archivoValido(llamado, path string) (string, int, error) {
 
 	var mensajes []string
 	defer func() {
-		log.Println("["+llamado+"]", " - ", path, "\n", strings.Join(mensajes, "\n"))
+		log.Println("\n["+llamado+"]", " - ", path, "\n", strings.Join(mensajes, "\n"))
 	}()
 
 	//Agrega mensajes a la varaible que se imprimira
@@ -50,7 +50,7 @@ func archivoValido(llamado, path string) (string, int, error) {
 	}
 
 	//Veo la info dela arch
-	info, err := os.Stat(filePedido)
+	_, err := os.Stat(filePedido)
 
 	//Si el archivo no exite
 	if os.IsNotExist(err) {
@@ -61,12 +61,6 @@ func archivoValido(llamado, path string) (string, int, error) {
 	//Si ocurrio otro error
 	if err != nil {
 		return filePedido, http.StatusInternalServerError, errors.New("ocurrio un error al buscar el fichero: " + err.Error())
-	}
-
-	//Si se esta pidiendo un directorio
-	if info.IsDir() {
-		log("Se intento acceder a al directorio:", filePedido)
-		return filePedido, http.StatusUnauthorized, errors.New("no puede acceder a un directorio")
 	}
 
 	/*
@@ -89,16 +83,6 @@ func archivoValido(llamado, path string) (string, int, error) {
 		return filePedido, http.StatusUnauthorized, errors.New("no puede acceder a un archivo del directorio de templates")
 	}
 
-	//Si el modo recursivo no esta activado
-	if !RecursiveMode {
-		//Los archivos que se pidan deben tener como padre
-		//estrictamente al directorio servido
-		if filepath.Dir(filePedido) != DirToServe {
-			log("Se intento acceder a un archivo de un directorio no permitido (Modo Recursivo off):", filePedido)
-			return filePedido, http.StatusUnauthorized, errors.New("no puede acceder a un archivo dentro de este directorio sin el modo recursivo activado")
-		}
-	}
-
 	return filePedido, http.StatusOK, nil
 }
 
@@ -111,23 +95,47 @@ func RedirectToFiles(c *gin.Context) {
 func ServirArchivos(c *gin.Context) {
 
 	/*
-		Si "file" tiene mas de un caracter, osea que no es solo "/", entoces
+		Si "path" tiene mas de un caracter, osea que no es solo "/", entoces
 		sigmifica que se pidio algun archivo.
 
 		Entoces sirvo el archivo que pidio y retorno
 	*/
-	if len(c.Param("file")) > 1 {
+	if len(c.Param("path")) > 1 {
 
-		archivo, resp, err := archivoValido(c.FullPath(), c.Param("file"))
-		//Valido la ruta
+		path, code, err := archivoValido(c.FullPath(), c.Param("path"))
 		if err != nil {
-			c.JSON(resp, gin.H{
-				"error": myfuncs.PrimeraMayus(err.Error()),
+			c.JSON(code, gin.H{
+				"status": code,
+				"error":  err.Error(),
 			})
 			return
 		}
 
-		c.File(archivo)
+		file, err := ReturnFile(path)
+		if err != nil {
+			c.JSON(code, gin.H{
+				"status": http.StatusInternalServerError,
+				"error":  err.Error(),
+			})
+			return
+		}
+
+		//Si se esta pidiendo un directorio
+		if file.IsDir {
+			//Leo los archivos del directorio que se me pidio(dir)
+			files, err := ReturnFiles(path)
+			if err != nil {
+				log.Fatal("Error al leer los archivos:", err)
+			}
+
+			log.Println("Cantidad de archivos cargados:", len(files))
+
+			//Sirvo los archivos
+			c.JSON(http.StatusOK, files)
+			return
+		}
+
+		c.File(file.Path)
 		return
 	}
 
@@ -141,6 +149,29 @@ func ServirArchivos(c *gin.Context) {
 
 	//Sirvo los archivos
 	c.JSON(http.StatusOK, files)
+}
+
+func CargarArchivosBeta(c *gin.Context) {
+
+	path, code, err := archivoValido(c.FullPath(), c.Param("path"))
+	if err != nil {
+		c.JSON(code, gin.H{
+			"status": code,
+			"error":  err.Error(),
+		})
+		return
+	}
+
+	b, err := ioutil.ReadFile(path)
+	if err != nil {
+		c.JSON(code, gin.H{
+			"status": http.StatusInternalServerError,
+			"error":  err.Error(),
+		})
+		return
+	}
+
+	c.Data(http.StatusOK, http.DetectContentType(b), b)
 }
 
 // DescargarArchivos - GET - /downloadfiles/*files

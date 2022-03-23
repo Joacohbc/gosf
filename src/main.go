@@ -23,14 +23,19 @@ const (
 var (
 	//Puerto en el cual sirve el servidor
 	PortSelected string
+
 	//Ruta que sirve el servidor
 	DirToServe string
+
 	//Directorio de templates usara brindar el HTML/CSS/JS
 	TemplateDirSeleceted string
+
 	//Tiempo que el servidor estara abierto
 	DurationTimeOpened time.Duration
+
 	//Si el servidor servira las carpetas dentro del directorio servido o solo los archivos
-	RecursiveMode bool
+	//RecursiveMode bool
+
 	//Si se pidio el mensaje de ayuda
 	HelpMessage bool
 )
@@ -42,7 +47,7 @@ func init() {
 	flag.StringVar(&PortSelected, "p", "8081", "Puerto donde se va a servir")
 	flag.StringVar(&TemplateDirSeleceted, "D", defaultTemplateDir, "Directorio donde se obtendra los archivos HTML/CCS/JS")
 	flag.DurationVar(&DurationTimeOpened, "t", 0, "Cuanto tiempo estara abierto el servidor (en s/m/h)")
-	flag.BoolVar(&RecursiveMode, "r", false, "Serivira todos los archivos y directorios de todos los directorio dentro de la ruta indicada")
+	//flag.BoolVar(&RecursiveMode, "r", false, "Serivira todos los archivos y directorios de todos los directorio dentro de la ruta indicada")
 
 	//Convierto los argumentos
 	flag.Parse()
@@ -114,7 +119,7 @@ func init() {
 	log.Println("Flags:")
 	log.Println("- Servidor abierto en:", PortSelected)
 	log.Println("- Ruta servida:", DirToServe)
-	log.Println("- Modo recursivo:", RecursiveMode)
+	//log.Println("- Modo recursivo:", RecursiveMode)
 	log.Println("- Tiempo de cierre automatico:", DurationTimeOpened.String())
 	log.Printf("- Se esta usando el directorio \"%s\" para templates\n", TemplateDirSeleceted)
 }
@@ -131,22 +136,24 @@ func main() {
 	router.StaticFS("/static", http.Dir(TemplateDirSeleceted))
 
 	//Agrego todos los handlers
+	//Si el usuario quiero ir a "/" lo rediriga a donde estan los archivos
+	router.GET("/", RedirectToFiles)
+
+	//Creo los
+	api := router.Group("/api")
 	{
-		//Si el usuario quiero ir a "/" lo rediriga a donde estan los archivos
-		router.GET("/", RedirectToFiles)
-
-		//Aqui donde se resibe la peticion de borrar archivos
-		router.DELETE("/removefiles/*file", BorrarArchivo)
-
 		//Uso "*file" para represntar toda la ruta, ejemplo en "/dir/file1" el
 		//parametro "file" sera "dir/file1"
-		router.GET("/getfiles/*file", ServirArchivos)
+		api.GET("/getfiles/*path", ServirArchivos)
+
+		//Aqui donde se resibe la peticion de borrar archivos
+		api.DELETE("/removefiles/*file", BorrarArchivo)
 
 		//Aqui es donde se solicita descargar
-		router.GET("/downloadfiles/*file", DescargarArchivos)
+		api.GET("/downloadfiles/*file", DescargarArchivos)
 
 		//Aqui es donde se resiben las peticiones con archivos para subir al servidor
-		router.POST("/uploadfiles", SubirArchivo)
+		api.POST("/uploadfiles", SubirArchivo)
 	}
 
 	//Personalizo el servidor

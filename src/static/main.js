@@ -1,6 +1,6 @@
-import cargarDOM from './js/cargarDOM.js';
+import * as events from "./js/btnEvents.js";
 
 document.addEventListener('DOMContentLoaded', function() {
-    cargarDOM();
+    events.cargarHTML("");
 });
 
