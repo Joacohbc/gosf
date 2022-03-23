@@ -15,11 +15,9 @@ import (
 
 //Valida que la ruta que se envio que se envio sea valido para
 //que el usuario pueda acceder a el:
-//- Comprueba si la ruta es abosluta (myfuncs.EsAbsolutaYExiste)
 //- Valida si existe la ruta
-//- Valida si se puede acceder a el archivo (Si esta dentro de la carpeta servida)
-//- Valida que no sea un directorio (Debido a que solo se sirven archivos)
-//- Valida que el directorio pedido este en el directorio servido
+//- Valida si se puede acceder a el archivo (Si esta dentro de la carpeta servida, usando rutas relativas)
+//- Valida que nosea el directorio de tempalates
 func archivoValido(llamado, path string) (string, int, error) {
 
 	var mensajes []string
@@ -39,50 +37,34 @@ func archivoValido(llamado, path string) (string, int, error) {
 		que sin importar si "*file" tiene o no tiene nada simpre se le
 		agrega un "/"
 	*/
-	var filePedido string = path[1:]
 
-	log("Se intento acceder a:", filePedido)
+	//Obtengo la ruta "absoluta", uniendo el Directorio a servir y
+	//y la ruta pedida
+	var pathAbs string = filepath.Join(DirToServe, path[1:])
 
-	if err := myfuncs.EsAbsolutaYExite(&filePedido); err != nil {
-		log(myfuncs.PrimeraMayus(err.Error()))
-		return filePedido, http.StatusInternalServerError, err
-	}
+	log("Se intento acceder a:", pathAbs)
 
 	//Veo la info dela arch
-	_, err := os.Stat(filePedido)
+	_, err := os.Stat(pathAbs)
 
 	//Si el archivo no exite
 	if os.IsNotExist(err) {
-		log("El fichero pedido no existe:", filePedido)
-		return filePedido, http.StatusInternalServerError, errors.New("el fichero al que intenta acceder no existe: " + err.Error())
+		log("El fichero pedido no existe:", pathAbs)
+		return "", http.StatusInternalServerError, errors.New("el fichero al que intenta acceder no existe: " + filepath.Base(pathAbs))
 	}
 
 	//Si ocurrio otro error
 	if err != nil {
-		return filePedido, http.StatusInternalServerError, errors.New("ocurrio un error al buscar el fichero: " + err.Error())
-	}
-
-	/*
-		Verifico si el archivo existe en el directorio que se esta sirviendo.
-		Sino lo notifico.
-
-		Compruebo checkeando que si en la ruta que se esta pidiendo
-		contiene el directorio servido, si no lo contiene sigmifica
-		que no esta dentro de el. (Al estar trabajando con rutas absolutas
-		y no relativas esto funciona)
-	*/
-	if !strings.Contains(filePedido, DirToServe) {
-		log("Se intento acceder a un archivo fuera del directorio:", filePedido)
-		return filePedido, http.StatusUnauthorized, errors.New("no puede acceder a un archivo que no exite en el directorio servida")
+		return "", http.StatusInternalServerError, errors.New("ocurrio un error al buscar el fichero: " + filepath.Base(pathAbs))
 	}
 
 	//Verifico que el archivo pedido no pertenesca al directorio que Templates
-	if strings.Contains(filePedido, TemplateDirSeleceted) {
-		log("Se intento acceder a un archivo del directorio de templates:", filePedido)
-		return filePedido, http.StatusUnauthorized, errors.New("no puede acceder a un archivo del directorio de templates")
+	if strings.Contains(pathAbs, TemplateDirSeleceted) {
+		log("Se intento acceder a un archivo del directorio de templates:", pathAbs)
+		return "", http.StatusUnauthorized, errors.New("no puede acceder a un archivo del directorio de templates")
 	}
 
-	return filePedido, http.StatusOK, nil
+	return pathAbs, http.StatusOK, nil
 }
 
 // RedirectToFiles - GET - /
@@ -101,6 +83,7 @@ func ServirArchivos(c *gin.Context) {
 	*/
 	if len(c.Param("path")) > 1 {
 
+		//Obtengo la ruta del archivo validado
 		path, code, err := archivoValido(c.FullPath(), c.Param("path"))
 		if err != nil {
 			c.JSON(code, gin.H{
@@ -109,6 +92,7 @@ func ServirArchivos(c *gin.Context) {
 			return
 		}
 
+		//Obtengo el File de esa ruta
 		file, err := ReturnFile(path)
 		if err != nil {
 			c.JSON(code, gin.H{
@@ -132,6 +116,7 @@ func ServirArchivos(c *gin.Context) {
 			return
 		}
 
+		//Si no es un directorio, osea es un archivo, lo sirvo
 		c.File(file.Path)
 		return
 	}
@@ -170,7 +155,7 @@ func DescargarArchivos(c *gin.Context) {
 
 	if file.IsDir {
 		c.JSON(http.StatusUnauthorized, gin.H{
-			"error": "You can't download a directory",
+			"error": "No se puede descargar un directorio",
 		})
 		return
 	}

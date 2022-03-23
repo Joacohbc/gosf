@@ -24,6 +24,7 @@ func (f *File) saveLink() {
 	f.Link = location.RequestURI()
 }
 
+//Retorna un File apartir de una ruta. Error en caso de que no exista
 func ReturnFile(path string) (File, error) {
 	info, err := os.Stat(path)
 	if err != nil {
@@ -50,40 +51,58 @@ func ReturnFiles(root string) ([]File, error) {
 
 	var files []File
 
-	//Su Root no es DirToServe
+	//Si el directorio a listar no es DirToServe
+	/*
+		Debido que no se puede acceder a un directorio por detras
+		de DirToServer, solo los que estan dentro de el
+	*/
 	if root != DirToServe {
 
-		//Pongo como primer File a el directorio padre (para que el usuario
-		//pueda volver al directorio anterior)
-		f := File{
-			Path:  filepath.Dir(root),
+		//Obtengo la ruta relativa
+		pathRelative, err := filepath.Rel(DirToServe, root)
+		if err != nil {
+			return nil, err
+		}
+
+		//Y agrego el Directorio anterior al que se pide
+		anteriorDir := File{
+			//La ruta sera el padre del directorio que se pidio
+			Path: filepath.Dir(pathRelative),
+			//Y el nombre sera el nombre del padre del directorio que se pidio
 			Name:  "...",
 			IsDir: true,
 		}
-		f.saveLink()
+		anteriorDir.saveLink()
 
-		files = append(files, f)
+		files = append(files, anteriorDir)
 	}
 
+	//Leo todos los archivos y subdirectorio del Directorio pedido
 	infos, err := ioutil.ReadDir(root)
+	if err != nil {
+		return []File{}, err
+	}
+
 	for _, info := range infos {
 
+		//Creo la ruta del archivo/subdirectorio apartir de la ruta
+		//de su directorio padre y su nombre
 		path := filepath.Join(root, info.Name())
-		//Eso para evitar que agregue al directorio padre al array
-		if path == root {
+
+		//Para que no se agrege al el mismo
+		if root == path {
 			break
 		}
 
-		//Si el directorio padre del fichero es diferente de root, es decir, que
-		//que esta dentro de un subdiretorio de root que no lo liste
-		//Solo listara los archivo y directorio que tiene directamnete root
-		if filepath.Dir(path) != filepath.Clean(root) {
-			break
+		//Busco la ruta relativa con respecto al directorio que se esta sirviendo
+		pathRelative, err := filepath.Rel(DirToServe, path)
+		if err != nil {
+			return nil, err
 		}
 
 		//Creo el arcihvo y le asigno algunos valores
 		f := File{
-			Path:     path,
+			Path:     pathRelative,
 			Name:     info.Name(),
 			ModTime:  info.ModTime(),
 			SModTime: info.ModTime().Format("2006-01-02 15:04:05"),
