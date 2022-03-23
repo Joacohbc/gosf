@@ -6,6 +6,7 @@ Gosf es un servidor HTTP que permite servir archivos. Este servidor utiliza temp
 - Descargar archivos
 - Borrar archivos
 - Subir archivos
+- Pide una autentificacion basica para acceder, de manera predeterminada el usuario es "admin" y contraseña la "admin"
 
 ```bash
 #Con -D se indica el directorio de templates
