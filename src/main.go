@@ -132,7 +132,7 @@ func init() {
 			log.Fatalln("Error al accerder al fichero de templates indicada")
 		}
 
-		if info.IsDir() {
+		if !info.IsDir() {
 			log.Fatalln("Error: el fichero de templates debe ser un directorio")
 		}
 	}

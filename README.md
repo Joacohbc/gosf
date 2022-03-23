@@ -1,6 +1,6 @@
 # Gosf
 
-Es un servidor HTTP que permite servir carpetas. Este servidor utiliza tempaltes de HTML, CSS y scripts de JS para poder funcionar, asi que se necesita indicar esas rutas (predeterminadamente usar $HOME/.config/gosf/static/). Actualmente permite:
+Gosf es un servidor HTTP que permite servir archivos. Este servidor utiliza tempaltes de HTML, CSS y scripts de JS para poder funcionar, asi que se necesita indicar esas rutas (predeterminadamente usar $HOME/.config/gosf/static/). Actualmente permite:
 
 - Acceder a la carpeta servida
 - Descargar archivos
@@ -11,13 +11,12 @@ Es un servidor HTTP que permite servir carpetas. Este servidor utiliza tempaltes
 #Con -D se indica el directorio de templates
 #Con -d el directorio que se quiere servir
 #Con -p en el puerto que se quiere servir
-gosf -D ./src/static/ -d ~/Archivos/JoacoFiles/Videos -p 80
+gosf -d ~/Documentos/Videos -p 80
 ```
 
-## Instalar
+## Instalacion (only Linux)
 
-La instalacion consta de mover el binario a el directorio de binarios, generalmente /usr/bin, y la carpeta de templates
-moverla a la carpeta de configuracion ($HOME/.config/gosf/). Esto ya lo hace el install.sh:
+La instalacion consta de darle permiso de ejecucion al binario y moverlo al el directorio de binarios, en Linux es /usr/bin, y ademas mover la carpeta que contiene el HTML, CSS y JS (static) a la carpeta de configuracion ($HOME/.config/gosf/). Esto ya lo hace automaticamente el install.sh:
 
 - Clonar el repositorio
 
