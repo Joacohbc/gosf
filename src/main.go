@@ -15,8 +15,7 @@ import (
 )
 
 //Ruta predeterminada del directorio de Templates
-const (
-	defaultTemplateDir string = "./static"
+var (
 	defaultDirToServer string = "./"
 )
 
@@ -45,7 +44,7 @@ func init() {
 	flag.BoolVar(&HelpMessage, "help", false, "Muestra el mensaje de ayuda")
 	flag.StringVar(&DirToServe, "d", defaultDirToServer, "Directorio que se va servir")
 	flag.StringVar(&PortSelected, "p", "8081", "Puerto donde se va a servir")
-	flag.StringVar(&TemplateDirSeleceted, "D", defaultTemplateDir, "Directorio donde se obtendra los archivos HTML/CCS/JS")
+	flag.StringVar(&TemplateDirSeleceted, "D", "", "Directorio donde se obtendra los archivos HTML/CCS/JS")
 	flag.DurationVar(&DurationTimeOpened, "t", 0, "Cuanto tiempo estara abierto el servidor (en s/m/h)")
 	//flag.BoolVar(&RecursiveMode, "r", false, "Serivira todos los archivos y directorios de todos los directorio dentro de la ruta indicada")
 
@@ -109,9 +108,33 @@ func init() {
 	}
 
 	//Checkeo que la ruta de los templates (haya cambiado o no)
-	//exista y sea una ruta absoluta
-	if err := myfuncs.EsAbsolutaYExite(&TemplateDirSeleceted); err != nil {
-		log.Fatalln(myfuncs.PrimeraMayus(err.Error()))
+	if TemplateDirSeleceted == "" {
+
+		//Si no se ingreso nada obtengo el ruta predeterminada
+		configPath, err := os.UserConfigDir()
+		if err != nil {
+			log.Fatalln("Error al obtener la ruta de configuracion:", err)
+		}
+
+		//La Ruta seria -> /home/user/.config/gosf/static/
+		TemplateDirSeleceted = filepath.Join(configPath, "gosf", "static")
+
+		err = os.MkdirAll(TemplateDirSeleceted, 0755)
+		if err != nil {
+			log.Fatalln("Error al crear la carpeta de configuracion:", err)
+		}
+
+	} else {
+
+		//Si se ingreso compruebo que se haya ingresado y sea un directorio
+		info, err := os.Stat(TemplateDirSeleceted)
+		if err != nil {
+			log.Fatalln("Error al accerder al fichero de templates indicada")
+		}
+
+		if info.IsDir() {
+			log.Fatalln("Error: el fichero de templates debe ser un directorio")
+		}
 	}
 
 	//Una vez checkeadas todas las flags
@@ -119,7 +142,6 @@ func init() {
 	log.Println("Flags:")
 	log.Println("- Servidor abierto en:", PortSelected)
 	log.Println("- Ruta servida:", DirToServe)
-	//log.Println("- Modo recursivo:", RecursiveMode)
 	log.Println("- Tiempo de cierre automatico:", DurationTimeOpened.String())
 	log.Printf("- Se esta usando el directorio \"%s\" para templates\n", TemplateDirSeleceted)
 }
@@ -142,7 +164,7 @@ func main() {
 	//Creo los
 
 	api := router.Group("/api", gin.BasicAuth(gin.Accounts{
-		"joaco": "joaco",
+		"admin": "admin",
 	}))
 	{
 		//Uso "*file" para represntar toda la ruta, ejemplo en "/dir/file1" el

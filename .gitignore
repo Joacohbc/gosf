@@ -1,5 +1,6 @@
 testing/*
-*.sh
+make.sh
+test.sh
 .vcode/*
 src/not-implemented/*
 
