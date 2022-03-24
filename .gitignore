@@ -2,7 +2,7 @@ testing/*
 make.sh
 test.sh
 .vcode/*
-src/not-implemented/*
+not-implemented/*
 
 #Ignoro las cosas de debug
 node_modules/*

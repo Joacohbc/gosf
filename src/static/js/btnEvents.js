@@ -1,103 +1,5 @@
 //Eventos de botones
 
-//Accion de descargar archivos
-export function actionDescargar(e) {
-    e.stopPropagation();
-    e.preventDefault();
-
-    e.stopPropagation();
-    e.preventDefault();
-
-    //Leo la info del archivo
-    const archivo = e.target.parentElement.parentElement.getAttribute("info");
-    const url = `http://${window.location.host}/api/downloadfiles/${archivo}`;
-
-    //Hago la peticion
-    fetch(url, {
-        method: 'GET',
-    }).then(responseData => {
-        
-        //Si el status no es Ok, sigmifica que algo fallo
-        //y se notificara con un JSON
-        if (!responseData.ok) {
-
-            //Sabiendo que sera un JSON, proceso el json
-            responseData.json().then(json => {
-                //Y notifico el error
-                alert('Ocurrio un error al acceder al archivo: ' + json.error);
-            }).catch((err) => {
-                alert('Ocurrio un error al leer la respuesta del servidor');
-                console.log(err);
-            });
-            return;
-        }
-
-        const archivo = e.target.parentElement.parentElement.getAttribute("info");
-        const url = `http://${window.location.host}/api/api/ownloadfiles/${archivo}`;
-        const win = window.open(url, "_self");
-
-    }).catch(error => {
-        //Si ocurrio un error
-        alert('Ocurrio un error:' + error);
-        console.error(error);
-    });
-
-}
-
-//Accion de borrar un archivo
-export function actionBorrar(e) {
-    e.stopPropagation();
-    e.preventDefault();
-
-    if (!confirm("¿Quiere borrar el archivo seleccionado?")) {
-        return;
-    }
-
-    /*
-    Obtengo el elemento padre que es un <td>, y de ese <td> obtengo 
-    el padre que es el que es el <tr>.
-    
-    De ese <tr> obtengo el atributo "info" que es donde esta el nombre
-    del archivo
-    */
-    const archivo = e.target.parentElement.parentElement.getAttribute("info");
-
-    //Creo la peticion
-    const Http = new XMLHttpRequest();
-    const url = `http://${window.location.host}/api/removefiles/${archivo}`;
-
-    Http.open("DELETE", url);
-    Http.onreadystatechange = () => {
-
-        //Si no esta completada la transaccion(Estado Nro 4)
-        /* 
-            Si no remite la funcion 4 veces
-            0: no inicializado. Indica que no se ha abierto la conexión con el servidor (no se ha llamado a open)
-
-            1: conexión con servidor establecida. (no se ha llamado a open)
-
-            2: recibida petición en servidor. (se ha llamado a send)
-
-            3: enviando información. (se ha llamado a send)
-
-            4: completado. Se ha recibido la información del servidor y esta listo para operar
-        */
-        if (Http.readyState != XMLHttpRequest.DONE) {
-            return;
-        }
-
-        //Si el status es 202, es el StatusAccepted que envia el servidor
-        if (Http.status == 202) {
-            //Si es correcto  recargo para que ya no se muestre el archivo
-            window.location.reload();
-        } else {
-            const respuesta = JSON.parse(Http.responseText);
-            alert(respuesta.error);
-        }
-    };
-    Http.send();
-}
-
 //Accion para obtener un archivo
 export function actionObtener(e) {
     e.stopPropagation();
@@ -149,6 +51,102 @@ export function actionCargarDir(e){
     cargarHTML(archivo);
 }
 
+//Accion de descargar archivos
+export function actionDescargar(e) {
+    e.stopPropagation();
+    e.preventDefault();
+
+    e.stopPropagation();
+    e.preventDefault();
+
+    //Leo la info del archivo
+    const archivo = e.target.parentElement.parentElement.getAttribute("info");
+    const url = `http://${window.location.host}/api/downloadfiles/${archivo}`;
+
+    //Hago la peticion
+    fetch(url, {
+        method: 'GET',
+    }).then(responseData => {
+        
+        //Si el status no es Ok, sigmifica que algo fallo
+        //y se notificara con un JSON
+        if (!responseData.ok) {
+
+            //Sabiendo que sera un JSON, proceso el json
+            responseData.json().then(json => {
+                //Y notifico el error
+                alert('Ocurrio un error al acceder al archivo: ' + json.error);
+            }).catch((err) => {
+                alert('Ocurrio un error al leer la respuesta del servidor');
+                console.log(err);
+            });
+            return;
+        }
+
+        window.open(url, "_self");
+
+    }).catch(error => {
+        //Si ocurrio un error
+        alert('Ocurrio un error:' + error);
+        console.error(error);
+    });
+
+}
+
+//Accion de borrar un archivo
+export function actionBorrar(e) {
+    e.stopPropagation();
+    e.preventDefault();
+
+    if (!confirm("¿Quiere borrar el archivo seleccionado?")) {
+        return;
+    }
+
+    /*
+    Obtengo el elemento padre que es un <td>, y de ese <td> obtengo 
+    el padre que es el que es el <tr>.
+    
+    De ese <tr> obtengo el atributo "info" que es donde esta el nombre
+    del archivo
+    */
+    const archivo = e.target.parentElement.parentElement.getAttribute("info");
+
+    //Creo la peticion
+    const Http = new XMLHttpRequest();
+    const url = `http://${window.location.host}/api/auth/removefiles/${archivo}`;
+
+    Http.open("DELETE", url);
+    Http.onreadystatechange = () => {
+
+        //Si no esta completada la transaccion(Estado Nro 4)
+        /* 
+            Si no remite la funcion 4 veces
+            0: no inicializado. Indica que no se ha abierto la conexión con el servidor (no se ha llamado a open)
+
+            1: conexión con servidor establecida. (no se ha llamado a open)
+
+            2: recibida petición en servidor. (se ha llamado a send)
+
+            3: enviando información. (se ha llamado a send)
+
+            4: completado. Se ha recibido la información del servidor y esta listo para operar
+        */
+        if (Http.readyState != XMLHttpRequest.DONE) {
+            return;
+        }
+
+        //Si el status es 202, es el StatusAccepted que envia el servidor
+        if (Http.status == 202) {
+            //Si es correcto  recargo para que ya no se muestre el archivo
+            window.location.reload();
+        } else {
+            const respuesta = JSON.parse(Http.responseText);
+            alert(respuesta.error);
+        }
+    };
+    Http.send();
+}
+
 //Accion de subir un archivo
 export function actionSubir(e) {
 
@@ -177,8 +175,12 @@ export function actionSubir(e) {
         data.append('fileToUpload', files[i]);
     }
 
+    //Obtengo el directorio de que se esta sirviendo (actualmente) para subir
+    //el archivo en ese directorio
+    const directorio = document.getElementById("btnSubir").getAttribute("info");
+
     //Envio los archivos a /uploadfiles con metodo POST
-    fetch(`http://${window.location.host}/api/uploadfiles`, {
+    fetch(`http://${window.location.host}/api/auth/uploadfiles/${directorio}`, {
             method: 'POST',
             body: data
         })
@@ -236,7 +238,7 @@ export function cargarHTML(archivo) {
                 las filas
             */
             const part = document.createDocumentFragment();
-            for (let i = 0; i < data.length; i++) {
+            for (let i = 0; i < data.length-1; i++) {
     
                 //Creo la fila (table row)
                 const tr = document.createElement("tr");
@@ -304,7 +306,10 @@ export function cargarHTML(archivo) {
             document.querySelector("tbody").appendChild(part);
             
             //Le agrego el evento "click" al boton de subir archivos 
-            document.getElementById("btnSubir").addEventListener("click", actionSubir);
+            const btnEnviar = document.getElementById("btnSubir");
+            btnEnviar.addEventListener("click", actionSubir);
+            console.log(data[data.length-1]);
+            btnEnviar.setAttribute("info", data[data.length-1].path);
         });
 
     }).catch(error => {

@@ -2,18 +2,28 @@
 
 Gosf es un servidor HTTP que permite servir archivos. Este servidor utiliza tempaltes de HTML, CSS y scripts de JS para poder funcionar, asi que se necesita indicar esas rutas (predeterminadamente usar $HOME/.config/gosf/static/). Actualmente permite:
 
-- Acceder a la carpeta servida
+- Acceder a la carpeta servida (y a sus subidrectorio)
 - Descargar archivos
 - Borrar archivos
 - Subir archivos
-- Pide una autentificacion basica para acceder, de manera predeterminada el usuario es "admin" y contraseña la "admin"
+- Pide una autentificacion basica para acceder a las funciones de enviar y borrar archivos, de manera predeterminada el usuario es "admin" y contraseña la "admin"
 
 ```bash
-#Con -D se indica el directorio de templates
 #Con -d el directorio que se quiere servir
 #Con -p en el puerto que se quiere servir
-gosf -d ~/Documentos/Videos -p 80
+gosf -d ~/Documentos/ -p 8081
+
+Output:
+2022/03/23 22:59:01 Flags:
+2022/03/23 22:59:01 - Servidor abierto en: 8081
+2022/03/23 22:59:01 - Ruta servida: /home/user/Documentos
+2022/03/23 22:59:01 - Tiempo de cierre automatico: 0s
+2022/03/23 22:59:01 - Se esta usando el directorio "/home/user/.config/gosf/static" para templates
+2022/03/23 22:59:01 - Usuario de adminstrador: map[admin:admin]
+2022/03/23 22:59:01 Iniciando servidor...
 ```
+
+Para apagar el servidor simplemente hay que hacer una señal de interrucion, un simple Ctrl+C(^C)
 
 ## Instalacion (only Linux)
 
