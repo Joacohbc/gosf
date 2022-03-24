@@ -11,7 +11,8 @@ Gosf es un servidor HTTP que permite servir archivos. Este servidor utiliza temp
 ```bash
 #Con -d el directorio que se quiere servir
 #Con -p en el puerto que se quiere servir
-gosf -d ~/Documentos/ -p 8081
+#Con -U se indica el usuario y contraña
+gosf -d ~/Documentos/ -p 8081 -U user,pass
 
 Output:
 2022/03/23 22:59:01 Flags:
@@ -19,7 +20,7 @@ Output:
 2022/03/23 22:59:01 - Ruta servida: /home/user/Documentos
 2022/03/23 22:59:01 - Tiempo de cierre automatico: 0s
 2022/03/23 22:59:01 - Se esta usando el directorio "/home/user/.config/gosf/static" para templates
-2022/03/23 22:59:01 - Usuario de adminstrador: map[admin:admin]
+2022/03/23 22:59:01 - Usuario de adminstrador: map[user:pass]
 2022/03/23 22:59:01 Iniciando servidor...
 ```
 
