@@ -17,6 +17,7 @@ package cmd
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -73,6 +74,38 @@ func serverOn(cmd *cobra.Command, args []string) {
 	}
 
 	log.Println("Iniciando servidor...")
+
+	//Si timeOpen es diferente de 0, es decir, que se ingreso algun valor
+	if cmd.Flags().Changed("time-live") {
+
+		//Comrpuebo que el valor no sea un valor negativo
+		if DurationTimeOpened <= 0 {
+			cobra.CheckErr(fmt.Errorf("se debe ingresar un tiempo de cierre valido (un valor positivo)"))
+		}
+
+		/*
+			Y en una goroutine espero ese tiempo, con time.Sleep(),
+			y cierro el programa
+		*/
+		go func() {
+			time.Sleep(DurationTimeOpened)
+
+			log.Println("Apagando servidor...")
+
+			//Pido el contexto con un DeadLine de 5s
+			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+
+			//Cuando termine "cierre" el contexto
+			defer cancel()
+
+			//Y apago el servidor
+			if err := s.Shutdown(ctx); err != nil {
+				log.Fatal("Error al apagar el servidor:", err)
+			}
+			log.Println("Servidor apagado con exito")
+			os.Exit(0)
+		}()
+	}
 
 	//Inicio el servidor en segundo plano
 	go func() {

@@ -105,24 +105,6 @@ func cargarVariables(cmd *cobra.Command, args []string) {
 		}
 	}
 
-	//Si timeOpen es diferente de 0, es decir, que se ingreso algun valor
-	if passed("time-live") {
-
-		//Comrpuebo que el valor no sea un valor negativo
-		if DurationTimeOpened <= 0 {
-			cobra.CheckErr(fmt.Errorf("se debe ingresar un tiempo de cierre valido (un valor positivo)"))
-		}
-
-		/*
-			Y en una goroutine espero ese tiempo, con time.Sleep(),
-			y cierro el programa
-		*/
-		go func() {
-			time.Sleep(DurationTimeOpened)
-			os.Exit(0)
-		}()
-	}
-
 	//Checkeo que la ruta de los templates (haya cambiado o no)
 	if passed("template-directory") {
 		//Si se ingreso compruebo que se haya ingresado y sea un directorio
