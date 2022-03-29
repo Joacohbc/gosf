@@ -26,6 +26,7 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
+	"github.com/spf13/cobra"
 )
 
 //Valida que la ruta que se envio que se envio sea valido para
@@ -126,7 +127,7 @@ func ServirArchivos(c *gin.Context) {
 			//Leo los archivos del directorio que se me pidio(dir)
 			files, err := ReturnFiles(path)
 			if err != nil {
-				log.Fatal("Error al leer los archivos:", err)
+				cobra.CheckErr(fmt.Errorf("no se pudo leer los archivos: %s", err.Error()))
 			}
 
 			log.Println("Cantidad de archivos cargados:", len(files))
@@ -144,7 +145,7 @@ func ServirArchivos(c *gin.Context) {
 	//Leo los archivos del directorio que se me pidio(dir)
 	files, err := ReturnFiles(DirToServe)
 	if err != nil {
-		log.Fatal("Error al leer los archivos:", err)
+		cobra.CheckErr(fmt.Errorf("no se pudo leer los archivos: %s", err.Error()))
 	}
 
 	log.Println("Cantidad de archivos cargados:", len(files))

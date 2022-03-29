@@ -53,3 +53,8 @@ func EsAbsolutaYExite(path *string) error {
 	*path = filepath.Clean(absPath)
 	return nil
 }
+
+//Devuelve si la ruta pasada es de un fichero oculto (Only Linux)
+func EsOculto(path string) bool {
+	return filepath.Base(path)[0] == '.'
+}

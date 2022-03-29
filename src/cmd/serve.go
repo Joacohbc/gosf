@@ -28,6 +28,26 @@ import (
 	"github.com/spf13/cobra"
 )
 
+var serverCmd = &cobra.Command{
+	Use:        "serve",
+	SuggestFor: []string{"server"},
+	Short:      "Inicia el servidor y sirve el directorio indicado (predeterminadamente es \"./\")",
+	Args:       cobra.ExactArgs(0),
+	PreRun:     cargarVariables,
+	Run:        serverOn,
+}
+
+func init() {
+	rootCmd.AddCommand(serverCmd)
+
+	//Flags
+	serverCmd.Flags().StringVarP(&DirToServe, "directory", "d", ".", "Directorio que se va servir")
+	serverCmd.Flags().StringVarP(&PortSelected, "port", "p", "8081", "Puerto donde se va a servir")
+	serverCmd.Flags().StringVarP(&TemplateDirSeleceted, "template-directory", "D", "", "Directorio donde se obtendra los archivos HTML/CCS/JS")
+	serverCmd.Flags().DurationVarP(&DurationTimeOpened, "time-live", "t", 0, "Cuanto tiempo estara abierto el servidor (en s/m/h)")
+	serverCmd.Flags().StringSliceP("user", "U", []string{}, "Indica cual sera el usuario y la contraseña del administrador")
+}
+
 func serverOn(cmd *cobra.Command, args []string) {
 	//Activar el release mode
 	gin.SetMode(gin.ReleaseMode)
@@ -100,10 +120,9 @@ func serverOn(cmd *cobra.Command, args []string) {
 
 			//Y apago el servidor
 			if err := s.Shutdown(ctx); err != nil {
-				log.Fatal("Error al apagar el servidor:", err)
+				cobra.CheckErr(fmt.Errorf("no se pudo al apagar el servidor correctamente: %s", err.Error()))
 			}
 			log.Println("Servidor apagado con exito")
-			os.Exit(0)
 		}()
 	}
 
@@ -111,7 +130,7 @@ func serverOn(cmd *cobra.Command, args []string) {
 	go func() {
 		if err := s.ListenAndServe(); err != nil {
 			if err != http.ErrServerClosed {
-				log.Fatalln("Error al abri el servidor: ", err)
+				cobra.CheckErr(fmt.Errorf("no se pudo ecender el servidor: %s", err.Error()))
 			}
 		}
 	}()
@@ -135,7 +154,7 @@ func serverOn(cmd *cobra.Command, args []string) {
 
 	//Y apago el servidor
 	if err := s.Shutdown(ctx); err != nil {
-		log.Fatal("Error al apagar el servidor:", err)
+		cobra.CheckErr(fmt.Errorf("no se pudo al apagar el servidor correctamente: %s", err.Error()))
 	}
 	log.Println("Servidor apagado con exito")
 }

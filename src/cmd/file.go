@@ -39,7 +39,7 @@ func (f *File) saveLink() {
 	f.Link = location.RequestURI()
 }
 
-//Retorna un File apartir de una ruta. Error en caso de que no exista
+//Retorna un File apartir de una ruta.
 func ReturnFile(path string) (File, error) {
 	info, err := os.Stat(path)
 	if err != nil {
@@ -132,7 +132,6 @@ func ReturnFiles(root string) ([]File, error) {
 
 	//Y como ultimo File agrego la ruta del directorio que se
 	//del cual se esta listando
-
 	pathRelative, err := filepath.Rel(DirToServe, root)
 	if err != nil {
 		return nil, err
