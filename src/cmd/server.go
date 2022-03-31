@@ -18,10 +18,12 @@ package cmd
 import (
 	"context"
 	"fmt"
+	"gosf/src/myfuncs"
 	"log"
 	"net/http"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -29,10 +31,10 @@ import (
 )
 
 var serverCmd = &cobra.Command{
-	Use:        "serve",
-	SuggestFor: []string{"server"},
+	Use:        "server",
+	SuggestFor: []string{"serve", "dir", "serve-dir"},
 	Short:      "Inicia el servidor y sirve el directorio indicado (predeterminadamente es \"./\")",
-	Args:       cobra.ExactArgs(0),
+	Args:       cobra.MaximumNArgs(1),
 	PreRun:     cargarVariables,
 	Run:        serverOn,
 }
@@ -41,7 +43,6 @@ func init() {
 	rootCmd.AddCommand(serverCmd)
 
 	//Flags
-	serverCmd.Flags().StringVarP(&DirToServe, "directory", "d", ".", "Directorio que se va servir")
 	serverCmd.Flags().StringVarP(&PortSelected, "port", "p", "8081", "Puerto donde se va a servir")
 	serverCmd.Flags().StringVarP(&TemplateDirSeleceted, "template-directory", "D", "", "Directorio donde se obtendra los archivos HTML/CCS/JS")
 	serverCmd.Flags().DurationVarP(&DurationTimeOpened, "time-live", "t", 0, "Cuanto tiempo estara abierto el servidor (en s/m/h)")
@@ -146,8 +147,8 @@ func serverOn(cmd *cobra.Command, args []string) {
 	<-c
 	log.Println("Apagando servidor...")
 
-	//Pido el contexto con un DeadLine de 5s
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	//Pido el contexto con un DeadLine de 15s
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 
 	//Cuando termine "cierre" el contexto
 	defer cancel()
@@ -157,4 +158,89 @@ func serverOn(cmd *cobra.Command, args []string) {
 		cobra.CheckErr(fmt.Errorf("no se pudo al apagar el servidor correctamente: %s", err.Error()))
 	}
 	log.Println("Servidor apagado con exito")
+}
+
+//Cargo lo que obtuve de las flags en las variabels
+func cargarVariables(cmd *cobra.Command, args []string) {
+
+	passed := func(s string) bool {
+		return cmd.Flags().Changed(s)
+	}
+
+	//Si el usuario ingresa algun directorio(osea que DirToServe no esta vacia) compruebo
+	//que el directorio ingresa es una ruta absoluta, sino cierro el programa.
+	if len(args) != 0 {
+		DirToServe = args[0]
+		err := myfuncs.EsAbsolutaYExite(&DirToServe)
+		cobra.CheckErr(err)
+	} else {
+
+		//En caso de que no haya ingresado busco una ruta local
+		localPaths, err := os.Getwd()
+		if err != nil {
+			cobra.CheckErr(fmt.Errorf("Error al buscar el directorio actual: " + err.Error()))
+		}
+
+		DirToServe = filepath.Clean(localPaths)
+
+		//Busco la info del directorio
+		i, err := os.Stat(DirToServe)
+
+		//Si la ruta no exite
+		if os.IsNotExist(err) {
+			cobra.CheckErr(fmt.Errorf("la ruta a servir(\"%s\") no exite: %s", DirToServe, err.Error()))
+		}
+
+		if err != nil {
+			cobra.CheckErr(fmt.Errorf("ocurrio un error con la ruta a servir (\"%s\"): %s", DirToServe, err.Error()))
+		}
+
+		//Si no es un directorio
+		if !i.IsDir() {
+			cobra.CheckErr(fmt.Errorf("a ruta a servir(\"%s\") debe ser un directorio", DirToServe))
+		}
+	}
+
+	//Checkeo que la ruta de los templates (haya cambiado o no)
+	if passed("template-directory") {
+		//Si se ingreso compruebo que se haya ingresado y sea un directorio
+		info, err := os.Stat(TemplateDirSeleceted)
+		if err != nil {
+			cobra.CheckErr(fmt.Errorf("no se pudo accerder al fichero de templates indicado \"%s\": %s", TemplateDirSeleceted, err.Error()))
+		}
+
+		if !info.IsDir() {
+			cobra.CheckErr(fmt.Errorf("el fichero de templates debe ser un directorio"))
+		}
+	} else {
+		TemplateDirSeleceted = crearConfigDir()
+	}
+
+	//Creo el Administrador
+	AdminAuth = gin.Accounts{
+		"admin": "admin",
+	}
+
+	//Si se pasan
+	if passed("user") {
+		u, err := cmd.Flags().GetStringSlice("user")
+		cobra.CheckErr(err)
+
+		if len(u) != 2 {
+			cobra.CheckErr(fmt.Errorf("debe ingresar el usuario de administrador en el formato \"-U user,password\""))
+		}
+
+		AdminAuth = gin.Accounts{
+			u[0]: u[1],
+		}
+	}
+
+	//Una vez checkeadas todas las flags
+	//Muestro sus estados
+	log.Println("Flags:")
+	log.Println("- Servidor abierto en:", PortSelected)
+	log.Println("- Ruta servida:", DirToServe)
+	log.Println("- Tiempo de cierre automático:", DurationTimeOpened.String())
+	log.Printf("- Se esta usando el directorio \"%s\" para templates\n", TemplateDirSeleceted)
+	log.Printf("- Usuario de administrador: %v", AdminAuth)
 }

@@ -26,7 +26,7 @@ import (
 var setConfigCmd = &cobra.Command{
 	Use:     "set-template-dir",
 	Aliases: []string{"stc"},
-	Short:   " Mueve (no copia), el directorio indicado a la carpeta de preterminada de templates",
+	Short:   "Mueve (no copia), el directorio indicado a la carpeta de preterminada de templates",
 	Args:    cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 
@@ -50,7 +50,7 @@ var setConfigCmd = &cobra.Command{
 		err = os.RemoveAll(config)
 		cobra.CheckErr(err)
 
-		//Y muevo los archivos (rename es lo mismo que move)
+		//Y muevo los archivos (rename es lo mismo que move mv)
 		err = os.Rename(dir, config)
 		cobra.CheckErr(err)
 	},
