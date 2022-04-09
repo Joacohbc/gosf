@@ -181,21 +181,21 @@ export function actionSubir(e) {
 
     //Envio los archivos a /uploadfiles con metodo POST
     fetch(`http://${window.location.host}/api/auth/uploadfiles/${directorio}`, {
-            method: 'POST',
-            body: data
-        })
-        ///Convierto la respuesta JSON
-        .then(response => response.json())
-        .then(data => {
-            //Si todo ocurrio exitosamente recargo
-            //para ver los resultados
-            window.location.reload();
-        })
-        .catch(error => {
-            //Si ocurrio un error
-            alert('Ocurrio un error:' + error.error);
-            console.error(error);
-        });
+        method: 'POST',
+        body: data
+    })
+    ///Convierto la respuesta JSON
+    .then(response => response.json())
+    .then(data => {
+        //Si todo ocurrio exitosamente recargo
+        //para ver los resultados
+        window.location.reload();
+    })
+    .catch(error => {
+        //Si ocurrio un error
+        alert('Ocurrio un error:' + error.error);
+        console.error(error);
+    });
 }
 
 //Funcion de cargar HTML

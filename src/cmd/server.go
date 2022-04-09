@@ -94,41 +94,37 @@ func serverOn(cmd *cobra.Command, args []string) {
 		MaxHeaderBytes: 10 << 20,
 	}
 
-	log.Println("Iniciando servidor...")
+	apagarServer := func() {
+		log.Println("Apagando servidor...")
 
-	//Si timeOpen es diferente de 0, es decir, que se ingreso algun valor
-	if cmd.Flags().Changed("time-live") {
+		//Pido el contexto con un DeadLine de 5s
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 
-		//Comrpuebo que el valor no sea un valor negativo
-		if DurationTimeOpened <= 0 {
-			cobra.CheckErr(fmt.Errorf("se debe ingresar un tiempo de cierre valido (un valor positivo)"))
+		//Cuando termine "cierre" el contexto
+		defer cancel()
+
+		//Y apago el servidor
+		if err := s.Shutdown(ctx); err != nil {
+			cobra.CheckErr(fmt.Errorf("no se pudo al apagar el servidor correctamente: %s", err.Error()))
 		}
+		log.Println("Servidor apagado con exito")
+		os.Exit(0)
+	}
 
+	if cmd.Flags().Changed("time-live") {
 		/*
 			Y en una goroutine espero ese tiempo, con time.Sleep(),
 			y cierro el programa
 		*/
 		go func() {
 			time.Sleep(DurationTimeOpened)
-
-			log.Println("Apagando servidor...")
-
-			//Pido el contexto con un DeadLine de 5s
-			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-
-			//Cuando termine "cierre" el contexto
-			defer cancel()
-
-			//Y apago el servidor
-			if err := s.Shutdown(ctx); err != nil {
-				cobra.CheckErr(fmt.Errorf("no se pudo al apagar el servidor correctamente: %s", err.Error()))
-			}
-			log.Println("Servidor apagado con exito")
+			apagarServer()
 		}()
 	}
 
 	//Inicio el servidor en segundo plano
 	go func() {
+		log.Println("Iniciando servidor...")
 		if err := s.ListenAndServe(); err != nil {
 			if err != http.ErrServerClosed {
 				cobra.CheckErr(fmt.Errorf("no se pudo ecender el servidor: %s", err.Error()))
@@ -145,19 +141,7 @@ func serverOn(cmd *cobra.Command, args []string) {
 
 	//Si espero  que llegue la senial de cierre
 	<-c
-	log.Println("Apagando servidor...")
-
-	//Pido el contexto con un DeadLine de 15s
-	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
-
-	//Cuando termine "cierre" el contexto
-	defer cancel()
-
-	//Y apago el servidor
-	if err := s.Shutdown(ctx); err != nil {
-		cobra.CheckErr(fmt.Errorf("no se pudo al apagar el servidor correctamente: %s", err.Error()))
-	}
-	log.Println("Servidor apagado con exito")
+	apagarServer()
 }
 
 //Cargo lo que obtuve de las flags en las variabels
@@ -232,6 +216,15 @@ func cargarVariables(cmd *cobra.Command, args []string) {
 
 		AdminAuth = gin.Accounts{
 			u[0]: u[1],
+		}
+	}
+
+	//Si timeOpen es diferente de 0, es decir, que se ingreso algun valor
+	if passed("time-live") {
+
+		//Comrpuebo que el valor no sea un valor negativo
+		if DurationTimeOpened <= 0 {
+			cobra.CheckErr(fmt.Errorf("se debe ingresar un tiempo de cierre valido (un valor positivo)"))
 		}
 	}
 
